@@ -1,17 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import ScoreDisplay from './components/ScoreDisplay';
 
-// A simple interface to define the structure of our food item data.
-// This is a good practice for type safety in TypeScript.
 interface FoodItem {
 	name: string;
 	calories: number;
 	image_url: string;
 }
 
-// A static list of food items to be used for the quiz.
 const fastFoodItems = [
 	'Dominos Medium Pepperoni Pizza',
 	'Chick-Fil-A Chicken Sandwich',
@@ -30,53 +28,25 @@ export default function Home() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [pointsGained, setPointsGained] = useState<number | null>(null);
-	const [streak, setStreak] = useState<boolean[]>([]); // Tracks correct/incorrect guesses for the streak display
+	const [streak, setStreak] = useState<boolean[]>([]);
 	const [showFinalScore, setShowFinalScore] = useState(false);
 	const [popupError, setPopupError] = useState<string | null>(null);
 
-	// Effect to manage the fading of the pop-up error message.
+	// --- Animation refs/state ---
+	const animFrameRef = useRef<number | null>(null);
+	const animStartRef = useRef<number | null>(null);
+	const animInitialPointsRef = useRef<number>(0);
+	const animStartScoreRef = useRef<number>(0);
+	const SCORE_ANIMATION_DURATION_MS = 1000;
+
+	// Pop-up fade
 	useEffect(() => {
 		if (popupError) {
-			const timer = setTimeout(() => {
-				setPopupError(null);
-			}, 3000); // Pop-up will disappear after 3 seconds.
-			return () => clearTimeout(timer);
+			const t = setTimeout(() => setPopupError(null), 3000);
+			return () => clearTimeout(t);
 		}
 	}, [popupError]);
 
-	// Effect to handle the score animation.
-	useEffect(() => {
-		if (pointsGained === null) {
-			return;
-		}
-
-		const duration = 1000; // Animation duration in ms
-		const incrementInterval = 20; // Update every 20ms
-		const totalIncrements = duration / incrementInterval;
-		const pointsPerIncrement = pointsGained / totalIncrements;
-
-		let currentIncrement = 0;
-		const animationInterval = setInterval(() => {
-			currentIncrement++;
-			setScore((prevScore) => {
-				const newScore = prevScore + pointsPerIncrement;
-				console.log(newScore);
-				return currentIncrement >= totalIncrements
-					? Math.round(prevScore + pointsGained)
-					: newScore;
-			});
-			setPointsGained((prevPoints) => prevPoints! - pointsPerIncrement);
-
-			if (currentIncrement >= totalIncrements) {
-				clearInterval(animationInterval);
-				setPointsGained(null); // Hide the gained points display
-			}
-		}, incrementInterval);
-
-		return () => clearInterval(animationInterval);
-	}, [pointsGained]);
-
-	// Function to start the game by fetching data.
 	const startGame = async () => {
 		setGameStarted(true);
 		setLoading(true);
@@ -84,35 +54,28 @@ export default function Home() {
 		setError(null);
 
 		try {
-			console.log('INITIALIZING FOOD API');
-			// Initialize the API (if necessary for the backend)
 			const initResponse = await fetch(`http://localhost:3001/api/init`);
 			if (!initResponse.ok) {
 				throw new Error('Failed to initialize food API.');
 			}
 
-			// Fetch calories and images for each fast food item.
 			const questionsWithImages = await Promise.all(
 				fastFoodItems.map(async (item) => {
-					// Fetch calorie information
 					const calorieResponse = await fetch(
 						`http://localhost:3001/api/food/calories?query=${item}`
 					);
 					const calorieData = await calorieResponse.json();
-					const desc = calorieData['food_description'];
-
-					// Parse the calorie value from the description.
+					const desc = calorieData['food_description'] as string;
 					const match = desc.match(/Calories:\s*(\d+)/);
 					const calories = match ? parseInt(match[1], 10) : 0;
 
-					// Fetch the image URL
 					const imageResponse = await fetch(`http://localhost:3001/api/food/image?query=${item}`);
 					const imageData = await imageResponse.json();
 
 					return {
 						name: item,
-						calories: calories,
-						image_url: imageData.imageUrl,
+						calories,
+						image_url: imageData.imageUrl as string,
 					};
 				})
 			);
@@ -129,13 +92,70 @@ export default function Home() {
 		}
 	};
 
-	// Function to handle the user's guess.
+	// Start the points/score animation (exactly 1000ms, linear)
+	const startPointsAnimation = (initialPoints: number) => {
+		// Guard: nothing to animate
+		if (initialPoints <= 0) {
+			// Ensure the UI reflects zero points added and unchanged score
+			setPointsGained(null);
+			return;
+		}
+
+		// Capture starting values once
+		animInitialPointsRef.current = initialPoints;
+		animStartScoreRef.current = score;
+		animStartRef.current = null;
+
+		// Cancel any previous animation before starting a new one
+		if (animFrameRef.current !== null) {
+			cancelAnimationFrame(animFrameRef.current);
+			animFrameRef.current = null;
+		}
+
+		const tick = (now: number) => {
+			if (animStartRef.current === null) animStartRef.current = now;
+			const elapsed = now - animStartRef.current;
+			const t = Math.min(elapsed / SCORE_ANIMATION_DURATION_MS, 1); // 0..1
+
+			// Linear interpolation of remaining points
+			const remaining = Math.round(animInitialPointsRef.current * (1 - t));
+			const gained = animInitialPointsRef.current - remaining;
+
+			// Update state atomically based on captured baselines
+			setPointsGained(remaining);
+			setScore(animStartScoreRef.current + gained);
+
+			if (t < 1) {
+				animFrameRef.current = requestAnimationFrame(tick);
+			} else {
+				// Ensure exact final values
+				setTimeout(() => {
+					setPointsGained(null);
+				}, 1000);
+				setScore(animStartScoreRef.current + animInitialPointsRef.current);
+				animFrameRef.current = null;
+			}
+		};
+
+		animFrameRef.current = requestAnimationFrame(tick);
+	};
+
+	// Clean up animation on unmount or when showAnswer toggles away
+	useEffect(() => {
+		return () => {
+			if (animFrameRef.current !== null) {
+				cancelAnimationFrame(animFrameRef.current);
+				animFrameRef.current = null;
+			}
+		};
+	}, []);
+
+	// Handle the user's guess
 	const handleGuess = () => {
 		if (!userGuess) {
 			setPopupError('Please enter a value.');
 			return;
 		}
-
 		const guess = parseInt(userGuess, 10);
 		if (isNaN(guess)) {
 			setPopupError('Please enter a valid number.');
@@ -145,30 +165,37 @@ export default function Home() {
 		const actual = questions[currentQuestionIndex].calories;
 		const points = Math.max(0, 1000 - Math.abs(actual - guess));
 
-		// The score will be updated by the useEffect, so just set the points here
-		setPointsGained(points);
-
-		// Update streak and show answer screen
+		// Prepare streak & answer view first
 		const isCorrect = points > 900;
-		setStreak([...streak, isCorrect]);
+		setStreak((s) => [...s, isCorrect]);
 		setShowAnswer(true);
+
+		// Initialize points (display starting value) and kick off animation
+		setPointsGained(points);
+		setTimeout(() => {
+			startPointsAnimation(points);
+		}, 1000);
 	};
 
-	// Function to move to the next question or end the game.
 	const nextQuestion = () => {
+		// Ensure any running animation is stopped
+		if (animFrameRef.current !== null) {
+			cancelAnimationFrame(animFrameRef.current);
+			animFrameRef.current = null;
+		}
 		setShowAnswer(false);
 		setUserGuess('');
 		setPointsGained(null);
+
 		if (currentQuestionIndex < questions.length - 1) {
-			setCurrentQuestionIndex(currentQuestionIndex + 1);
+			setCurrentQuestionIndex((i) => i + 1);
 		} else {
-			// End of quiz, show the final score screen.
 			setShowFinalScore(true);
 			setGameStarted(false);
 		}
 	};
 
-	// Conditional rendering for the different game states.
+	// --- RENDER STATES ---
 	if (!gameStarted && !showFinalScore) {
 		return (
 			<main className='flex min-h-screen flex-col items-center justify-center p-24'>
@@ -231,26 +258,17 @@ export default function Home() {
 
 	return (
 		<main className='flex min-h-screen flex-col items-center justify-between p-24'>
-			{/* Top section: Score and Question Number */}
+			{/* Top: Score & Question Number */}
 			<div className='z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex'>
-				{/* Score in the top left */}
 				<div className='fixed left-8 top-8 flex justify-center pb-6 pt-8'>
-					<span className='px-4 py-2 bg-gray-800 rounded-lg text-white'>
-						Score: {Math.round(score)}
-					</span>
-					{pointsGained !== null && (
-						<span className='ml-2 text-green-500 transition-opacity duration-300'>
-							+{Math.round(pointsGained)}
-						</span>
-					)}
+					<ScoreDisplay score={score} pointsGained={pointsGained} />
 				</div>
-				{/* Question number in the top middle */}
 				<div className='fixed top-8 left-1/2 -translate-x-1/2 flex justify-center pb-6 pt-8 text-black dark:text-white'>
 					Question {currentQuestionIndex + 1} of {questions.length}
 				</div>
 			</div>
 
-			{/* Main content section: Question and Image */}
+			{/* Main: Question & Image */}
 			<div className="relative flex flex-col place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
 				<h2 className='text-2xl font-semibold mb-4'>{currentQuestion.name}</h2>
 				{currentQuestion.image_url && (
@@ -265,11 +283,10 @@ export default function Home() {
 				)}
 			</div>
 
-			{/* Bottom section: Guessing input and controls */}
+			{/* Bottom: Input / Controls */}
 			<div className='mt-8 mb-32 flex justify-center w-full'>
 				{!showAnswer ? (
 					<div className='flex flex-col items-center'>
-						{/* Input and Guess Button */}
 						<input
 							type='number'
 							value={userGuess}
@@ -283,7 +300,6 @@ export default function Home() {
 						>
 							Guess
 						</button>
-						{/* Streak display */}
 						<div className='mt-4 flex space-x-2'>
 							{streak.map((isCorrect, index) => (
 								<span key={index} className='text-xl'>
@@ -309,7 +325,8 @@ export default function Home() {
 					</div>
 				)}
 			</div>
-			{/* Pop-up error message */}
+
+			{/* Pop-up error */}
 			{popupError && (
 				<div className='fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-center px-6 py-3 rounded-lg shadow-xl z-50 transition-all duration-500'>
 					{popupError}
