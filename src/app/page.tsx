@@ -3,12 +3,24 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import ScoreDisplay from './components/ScoreDisplay';
+import HomePage from './components/HomePage';
 
 interface FoodItem {
 	name: string;
 	calories: number;
 	image_url: string;
 }
+
+const foodImages: string[] = [
+	'https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=2072&auto=format&fit=crop',
+	'https://images.unsplash.com/photo-1568901083984-7a9609c13b3a?q=80&w=2070&auto=format&fit=crop',
+	'https://images.unsplash.com/photo-1550547660-d94508490a35?q=80&w=2070&auto=format&fit=crop',
+	'https://images.unsplash.com/photo-1542826438-bd962f92476d?q=80&w=1924&auto=format&fit=crop',
+	'https://images.unsplash.com/photo-1596956627008-0130d210519a?q=80&w=2070&auto=format&fit=crop',
+	'https://images.unsplash.com/photo-1619895029413-176c49615598?q=80&w=1932&auto=format&fit=crop',
+	'https://images.unsplash.com/photo-1588636173041-e94fdfb7858c?q=80&w=2070&auto=format&fit=crop',
+	'https://images.unsplash.com/photo-1628846985392-f08985144b6c?q=80&w=1935&auto=format&fit=crop',
+];
 
 const fastFoodItems = [
 	'Dominos Medium Pepperoni Pizza',
@@ -28,7 +40,8 @@ export default function Home() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [pointsGained, setPointsGained] = useState<number | null>(null);
-	const [streak, setStreak] = useState<boolean[]>([]);
+	// The user's past scores
+	const [scores, setScores] = useState<number[]>([]);
 	const [showFinalScore, setShowFinalScore] = useState(false);
 	const [popupError, setPopupError] = useState<string | null>(null);
 
@@ -114,7 +127,7 @@ export default function Home() {
 			setShowFinalScore(false);
 			setCurrentQuestionIndex(0);
 			setScore(0);
-			setStreak([]);
+			setScores([]);
 		}
 	};
 
@@ -126,6 +139,7 @@ export default function Home() {
 		if (initialPoints === null || initialPoints <= 0) {
 			// Ensure the UI reflects zero points added and unchanged score
 			setPointsGained(null);
+			setScores((s) => [...s, initialPoints]);
 			return;
 		}
 
@@ -136,7 +150,9 @@ export default function Home() {
 
 		// Cancel any previous animation before starting a new one
 		if (animFrameRef.current !== null) {
+			console.log('CANCELLING');
 			cancelAnimationFrame(animFrameRef.current);
+			setScores((s) => [...s, initialPoints]);
 			animFrameRef.current = null;
 		}
 
@@ -157,9 +173,10 @@ export default function Home() {
 				animFrameRef.current = requestAnimationFrame(tick);
 			} else {
 				// Ensure exact final values
-				console.log('Stopping points gained');
 				setTimeout(() => {
 					setPointsGained(null);
+					console.log('Setting scores streak');
+					setScores((s) => [...s, initialPoints]);
 				}, 1000);
 				setScore(animStartScoreRef.current + animInitialPointsRef.current);
 				animFrameRef.current = null;
@@ -184,13 +201,9 @@ export default function Home() {
 		const actual = questions[currentQuestionIndex].calories;
 		const points = Math.max(0, 1000 - Math.abs(actual - guess));
 
-		// Prepare streak & answer view first
-		const isCorrect = points > 900;
-		setStreak((s) => [...s, isCorrect]);
 		setShowAnswer(true);
 
 		// Initialize points (display starting value) and kick off animation
-		console.log('setting points gained to ', points);
 		setPointsGained(points);
 		startPointsAnimationTimeoutRef.current = setTimeout(() => {
 			startPointsAnimation(points);
@@ -222,61 +235,7 @@ export default function Home() {
 	};
 
 	if (!gameStarted && !showFinalScore) {
-		const playButtonClass =
-			'cursor-pointer w-full px-8 flex-1 py-4 bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold rounded-full shadow-lg transition-transform duration-200 ease-in-out hover:scale-105';
-
-		const otherButtonClass =
-			'cursor-pointer w-full px-8 flex-1 py-4 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold rounded-full shadow-lg transition-transform duration-200 ease-in-out hover:scale-105';
-		return (
-			<div className='flex w-full items-center justify-center p-4 font-inter'>
-				{/* Main container for the landing page content */}
-				<main className='w-full max-w-2xl bg-slate-800 p-8 rounded-3xl shadow-2xl flex flex-col items-center text-center space-y-8'>
-					{/* Game Title */}
-					<h1 className='text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-lime-500'>
-						CalorieGuessr
-					</h1>
-
-					{/* Game description */}
-					<p className='text-lg text-slate-300 max-w-lg leading-relaxed mb-8'>
-						Guess the calories of fast foods. Looks can be deceving 👀
-					</p>
-
-					{/* Buttons container */}
-					<div className='w-full flex flex-col justify-center items-center space-y-4 mt-8'>
-						<div className='flex w-1/2 justify-center items-center'>
-							<button onClick={startGame} disabled={loading} className={playButtonClass}>
-								Play Daily Game
-							</button>
-						</div>
-						<div className='flex w-full justify-center items-center space-x-4'>
-							{/* Past Games button */}
-							<button
-								onClick={() => console.log('Coming soon: a list of your past games.')}
-								className={otherButtonClass}
-							>
-								Past Games
-							</button>
-
-							{/* Your Stats button */}
-							<button
-								onClick={() => console.log('Coming soon: your user stats.')}
-								className={otherButtonClass}
-							>
-								Your Stats
-							</button>
-						</div>
-					</div>
-
-					{/* Simple footer */}
-					<footer className='text-white absolute bottom-4 text-center text-sm'>
-						Game by{' '}
-						<a className='font-bold' href='https://github.com/va-rau-jo'>
-							Victor Araujo
-						</a>
-					</footer>
-				</main>
-			</div>
-		);
+		return <HomePage loading={loading} startGameCallback={startGame} />;
 	}
 
 	if (loading) {
@@ -310,7 +269,7 @@ export default function Home() {
 						setGameStarted(false);
 						setCurrentQuestionIndex(0);
 						setScore(0);
-						setStreak([]);
+						setScores([]);
 					}}
 					className='px-8 py-4 bg-green-500 text-white font-bold rounded-lg hover:bg-green-700 transition-colors'
 				>
@@ -322,12 +281,17 @@ export default function Home() {
 
 	const currentQuestion = questions[currentQuestionIndex];
 
+	console.log('window.innerWidth', window.innerWidth);
+	console.log('window.innerHeight', window.innerHeight);
+
+	const nextButtonOpacity = pointsGained === null ? 1 : 0;
+
 	return (
-		<main className='flex w-full flex-col items-center px-24'>
+		<main className='flex w-full flex-col items-center space-y-4 px-24'>
 			{/* Top: Score & Question Number */}
 			<div className='flex z-10 max-w-5xl w-full items-center justify-center font-mono'>
 				<div className='text-2xl fixed left-8 top-8 flex justify-center pb-6 pt-8'>
-					<ScoreDisplay score={score} pointsGained={pointsGained} />
+					<ScoreDisplay score={score} pointsGained={pointsGained} scores={scores} />
 				</div>
 				<div className='text-3xl font-bold flex justify-center pb-6 pt-8'>
 					Question {currentQuestionIndex + 1} / {questions.length}
@@ -335,62 +299,58 @@ export default function Home() {
 			</div>
 
 			{/* Main: Question & Image */}
-			<div className='relative flex flex-1 flex-col items-center mt-16 mb-8 w-full'>
+			<div className='relative flex flex-1 flex-col items-center  w-full'>
 				<h2 className='text-2xl font-semibold mb-4'>{currentQuestion.name}</h2>
-				<div className='flex flex-1 relative h-[50vh] w-full justify-center'>
+				<div className='flex flex-1 relative xs:h-50 sm:h-100 md:h-70 w-full justify-center'>
 					{currentQuestion.image_url && (
 						<Image
 							className='border-4 border-gray-400 rounded-lg object-contain'
 							src={currentQuestion.image_url}
 							alt={currentQuestion.name}
-							width={500}
-							height={500}
+							fill={true}
 						/>
 					)}
 				</div>
 			</div>
 
 			{/* Bottom: Input / Controls */}
-			<div className='mb-16 flex justify-center w-full'>
-				{!showAnswer ? (
-					<div className='flex flex-col items-center'>
-						<input
-							type='number'
-							value={userGuess}
-							onChange={(e) => setUserGuess(e.target.value)}
-							className='px-4 py-2 border rounded'
-							placeholder='Enter your guess'
-						/>
-						<button
-							onClick={handleGuess}
-							className='mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors'
-						>
-							Guess
-						</button>
-						<div className='mt-4 flex space-x-2'>
-							{streak.map((isCorrect, index) => (
-								<span key={index} className='text-xl'>
-									{isCorrect ? '✅' : '❌'}
-								</span>
-							))}
-						</div>
-					</div>
-				) : (
-					<div className='flex flex-col items-center text-xl'>
-						<div className='font-mono'>
-							<p>Your Answer: {userGuess}</p>
-						</div>
-						<div className='font-mono'>
-							<p>Correct Answer: {currentQuestion.calories}</p>
-						</div>
-						<button
-							onClick={nextQuestion}
-							className='mt-4 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors'
-						>
-							Next
-						</button>
-					</div>
-				)}
+			<div className='mb-4 flex justify-center w-full'>
+				<div className='flex flex-col items-center text-xl'>
+					{!showAnswer ? (
+						<>
+							<input
+								type='number'
+								value={userGuess}
+								onChange={(e) => setUserGuess(e.target.value)}
+								className='px-4 py-2 border rounded'
+								placeholder='Enter your guess'
+							/>
+							<button
+								onClick={handleGuess}
+								className='mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors'
+							>
+								Guess
+							</button>
+						</>
+					) : (
+						<>
+							<div className='font-mono'>
+								<p>Your Answer: {userGuess}</p>
+							</div>
+							<div className='font-mono'>
+								<p>Correct Answer: {currentQuestion.calories}</p>
+							</div>
+							<button
+								onClick={nextQuestion}
+								style={{ opacity: nextButtonOpacity }}
+								disabled={nextButtonOpacity === 0}
+								className='mt-4 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors'
+							>
+								Next
+							</button>
+						</>
+					)}
+				</div>
 			</div>
 
 			{/* Pop-up error */}
