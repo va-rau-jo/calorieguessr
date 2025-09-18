@@ -57,48 +57,48 @@ export default function Home() {
 	useEffect(() => {
 		const initializeGame = async () => {
 			setLoading(true);
-			try {
-				const initResponse = await fetch(`http://localhost:3001/api/init`);
-				if (!initResponse.ok) {
-					throw new Error('Failed to initialize food API.');
-				}
+			// try {
+			// 	const initResponse = await fetch(`http://localhost:3001/api/init`);
+			// 	if (!initResponse.ok) {
+			// 		throw new Error('Failed to initialize food API.');
+			// 	}
 
-				const questionsWithImages = await Promise.all(
-					fastFoodItems.map(async (item) => {
-						const calorieResponse = await fetch(
-							`http://localhost:3001/api/food/calories?query=${item}`
-						);
-						const calorieData = await calorieResponse.json();
-						const desc = calorieData['food_description'] as string;
-						const match = desc.match(/Calories:\s*(\d+)/);
-						let calories = match ? parseInt(match[1], 10) : 0;
+			// 	const questionsWithImages = await Promise.all(
+			// 		fastFoodItems.map(async (item) => {
+			// 			const calorieResponse = await fetch(
+			// 				`http://localhost:3001/api/food/calories?query=${item}`
+			// 			);
+			// 			const calorieData = await calorieResponse.json();
+			// 			const desc = calorieData['food_description'] as string;
+			// 			const match = desc.match(/Calories:\s*(\d+)/);
+			// 			let calories = match ? parseInt(match[1], 10) : 0;
 
-						const serving = desc.split('Calories')[0];
-						if (serving) {
-							const fraction = serving.split('Per')[1].trim();
-							const multiplier = parseInt(fraction.split('/')[1], 10);
-							if (!isNaN(multiplier)) {
-								calories *= multiplier;
-							}
-						}
+			// 			const serving = desc.split('Calories')[0];
+			// 			if (serving) {
+			// 				const fraction = serving.split('Per')[1].trim();
+			// 				const multiplier = parseInt(fraction.split('/')[1], 10);
+			// 				if (!isNaN(multiplier)) {
+			// 					calories *= multiplier;
+			// 				}
+			// 			}
 
-						const imageResponse = await fetch(`http://localhost:3001/api/food/image?query=${item}`);
-						const imageData = await imageResponse.json();
+			// 			const imageResponse = await fetch(`http://localhost:3001/api/food/image?query=${item}`);
+			// 			const imageData = await imageResponse.json();
 
-						return {
-							name: item,
-							calories,
-							image_url: imageData.imageUrl as string,
-						};
-					})
-				);
-				setQuestions(questionsWithImages);
-			} catch (err) {
-				console.error(err);
-				setError('Failed to load questions. Please ensure the local server is running.');
-			} finally {
-				setLoading(false);
-			}
+			// 			return {
+			// 				name: item,
+			// 				calories,
+			// 				image_url: imageData.imageUrl as string,
+			// 			};
+			// 		})
+			// 	);
+			// 	setQuestions(questionsWithImages);
+			// } catch (err) {
+			// 	console.error(err);
+			// 	setError('Failed to load questions. Please ensure the local server is running.');
+			// } finally {
+			// 	setLoading(false);
+			// }
 		};
 		initializeGame();
 	}, []); // Empty dependency array means this runs once on mount

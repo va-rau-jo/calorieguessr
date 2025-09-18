@@ -1,11 +1,10 @@
-export class FoodItem {
+export interface FoodItem {
 	name: string;
-	calories: number;
-	image_url?: string;
+	calories: number | null;
+	imageUrl?: string;
+}
 
-	constructor(name: string, calories: number, image_url?: string) {
-		this.name = name;
-		this.calories = calories;
-		this.image_url = image_url;
-	}
+export interface DailyFood {
+	date: string;
+	items: FoodItem[];
 }
