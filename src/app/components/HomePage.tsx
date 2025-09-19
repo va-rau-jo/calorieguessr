@@ -1,5 +1,7 @@
 import React from 'react';
 import { useFirebase } from '../firebase/FirebaseProvider';
+import { deleteCookie } from '../utils';
+import { COOKIE_NAME_SCORE } from '../constants';
 
 const PLAY_BUTTON_CLASS =
 	'cursor-pointer w-full px-8 flex-1 py-4 bg-lime-500 hover:bg-lime-600 text-slate-900' +
@@ -36,6 +38,17 @@ export default function HomePage({ loading, startGameCallback }: HomePageProps) 
 							onClick={() => (window.location.href = '/admin')}
 						>
 							Admin
+						</button>
+					)}
+					{isAdmin && (
+						<button
+							className={`${LOGIN_BUTTON_CLASS}`}
+							onClick={() => {
+								deleteCookie(COOKIE_NAME_SCORE);
+								window.location.reload();
+							}}
+						>
+							Clear Cookies
 						</button>
 					)}
 				</div>

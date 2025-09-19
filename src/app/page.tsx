@@ -4,31 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import ScoreDisplay from './components/ScoreDisplay';
 import HomePage from './components/HomePage';
-
-interface FoodItem {
-	name: string;
-	calories: number;
-	image_url: string;
-}
-
-const foodImages: string[] = [
-	'https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=2072&auto=format&fit=crop',
-	'https://images.unsplash.com/photo-1568901083984-7a9609c13b3a?q=80&w=2070&auto=format&fit=crop',
-	'https://images.unsplash.com/photo-1550547660-d94508490a35?q=80&w=2070&auto=format&fit=crop',
-	'https://images.unsplash.com/photo-1542826438-bd962f92476d?q=80&w=1924&auto=format&fit=crop',
-	'https://images.unsplash.com/photo-1596956627008-0130d210519a?q=80&w=2070&auto=format&fit=crop',
-	'https://images.unsplash.com/photo-1619895029413-176c49615598?q=80&w=1932&auto=format&fit=crop',
-	'https://images.unsplash.com/photo-1588636173041-e94fdfb7858c?q=80&w=2070&auto=format&fit=crop',
-	'https://images.unsplash.com/photo-1628846985392-f08985144b6c?q=80&w=1935&auto=format&fit=crop',
-];
-
-const fastFoodItems = [
-	'Dominos Medium Pepperoni Pizza',
-	'Chick-Fil-A Chicken Sandwich',
-	'Mcdonalds Big Mac',
-	'In-n-Out Animal Style Burger',
-	'Mcdonalds 20 Piece Chicken Mcnuggets',
-];
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from './firebase/config';
+import { FoodItem } from './types';
+import { dateToUnderscore, getCookie, setCookie, deleteCookie } from './utils';
+import { FinalScorePage } from './components/FinalScorePage';
+import { COOKIE_NAME_SCORE } from './constants';
 
 export default function Home() {
 	const [gameStarted, setGameStarted] = useState(false);
@@ -43,7 +24,6 @@ export default function Home() {
 	// The user's past scores
 	const [scores, setScores] = useState<number[]>([]);
 	const [showFinalScore, setShowFinalScore] = useState(false);
-	const [popupError, setPopupError] = useState<string | null>(null);
 
 	// --- Animation refs/state ---
 	const animFrameRef = useRef<number | null>(null);
@@ -55,50 +35,41 @@ export default function Home() {
 
 	// Initialize game data on component mount
 	useEffect(() => {
+		const scoreCookie = getCookie(COOKIE_NAME_SCORE);
+		console.log(scoreCookie);
+		if (scoreCookie) {
+			const { score, scores } = JSON.parse(scoreCookie);
+			setScore(score);
+			setScores(scores);
+		}
+
 		const initializeGame = async () => {
 			setLoading(true);
-			// try {
-			// 	const initResponse = await fetch(`http://localhost:3001/api/init`);
-			// 	if (!initResponse.ok) {
-			// 		throw new Error('Failed to initialize food API.');
-			// 	}
 
-			// 	const questionsWithImages = await Promise.all(
-			// 		fastFoodItems.map(async (item) => {
-			// 			const calorieResponse = await fetch(
-			// 				`http://localhost:3001/api/food/calories?query=${item}`
-			// 			);
-			// 			const calorieData = await calorieResponse.json();
-			// 			const desc = calorieData['food_description'] as string;
-			// 			const match = desc.match(/Calories:\s*(\d+)/);
-			// 			let calories = match ? parseInt(match[1], 10) : 0;
+			try {
+				const today = new Date();
+				const dateString = dateToUnderscore(today.toISOString().split('T')[0]);
 
-			// 			const serving = desc.split('Calories')[0];
-			// 			if (serving) {
-			// 				const fraction = serving.split('Per')[1].trim();
-			// 				const multiplier = parseInt(fraction.split('/')[1], 10);
-			// 				if (!isNaN(multiplier)) {
-			// 					calories *= multiplier;
-			// 				}
-			// 			}
+				console.log(dateString);
+				const docRef = doc(db, 'dailyFoods', dateString);
+				const docSnap = await getDoc(docRef);
 
-			// 			const imageResponse = await fetch(`http://localhost:3001/api/food/image?query=${item}`);
-			// 			const imageData = await imageResponse.json();
-
-			// 			return {
-			// 				name: item,
-			// 				calories,
-			// 				image_url: imageData.imageUrl as string,
-			// 			};
-			// 		})
-			// 	);
-			// 	setQuestions(questionsWithImages);
-			// } catch (err) {
-			// 	console.error(err);
-			// 	setError('Failed to load questions. Please ensure the local server is running.');
-			// } finally {
-			// 	setLoading(false);
-			// }
+				if (docSnap.exists()) {
+					const data = docSnap.data();
+					if (data) {
+						setQuestions(data.foods);
+					} else {
+						setError('Invalid data format received from database');
+					}
+				} else {
+					setError('No questions available for today');
+				}
+			} catch (err) {
+				setError('Failed to load questions');
+				console.error(err);
+			} finally {
+				setLoading(false);
+			}
 		};
 		initializeGame();
 	}, []); // Empty dependency array means this runs once on mount
@@ -113,21 +84,15 @@ export default function Home() {
 		};
 	}, []);
 
-	// Pop-up fade
-	useEffect(() => {
-		if (popupError) {
-			const t = setTimeout(() => setPopupError(null), 3000);
-			return () => clearTimeout(t);
-		}
-	}, [popupError]);
-
 	const startGame = async () => {
-		if (!loading) {
+		if (score === 0 && !loading) {
 			setGameStarted(true);
 			setShowFinalScore(false);
 			setCurrentQuestionIndex(0);
 			setScore(0);
 			setScores([]);
+		} else {
+			setShowFinalScore(true);
 		}
 	};
 
@@ -189,17 +154,15 @@ export default function Home() {
 	// Handle the user's guess
 	const handleGuess = () => {
 		if (!userGuess) {
-			setPopupError('Please enter a value.');
 			return;
 		}
 		const guess = parseInt(userGuess, 10);
 		if (isNaN(guess)) {
-			setPopupError('Please enter a valid number.');
 			return;
 		}
 
 		const actual = questions[currentQuestionIndex].calories;
-		const points = Math.max(0, 1000 - Math.abs(actual - guess));
+		const points = Math.max(0, 1000 - Math.abs(actual! - guess));
 
 		setShowAnswer(true);
 
@@ -231,6 +194,8 @@ export default function Home() {
 		} else {
 			setShowFinalScore(true);
 			setGameStarted(false);
+			const cookieValue = JSON.stringify({ score, scores });
+			setCookie('calorieGuessrScore', cookieValue, 1);
 		}
 	};
 
@@ -260,30 +225,18 @@ export default function Home() {
 
 	if (showFinalScore) {
 		return (
-			<main className='flex w-full flex-col items-center justify-center p-24'>
-				<h1 className='text-4xl font-bold mb-8'>Quiz Complete!</h1>
-				<h2 className='text-2xl mb-4'>Your final score is: {Math.round(score)}</h2>
-				<button
-					onClick={() => {
-						setShowFinalScore(false);
-						setGameStarted(false);
-						setCurrentQuestionIndex(0);
-						setScore(0);
-						setScores([]);
-					}}
-					className='px-8 py-4 bg-green-500 text-white font-bold rounded-lg hover:bg-green-700 transition-colors'
-				>
-					Play Again
-				</button>
-			</main>
+			<FinalScorePage
+				score={score}
+				scores={scores}
+				questions={questions}
+				backCallback={() => {
+					setShowFinalScore(false);
+				}}
+			/>
 		);
 	}
 
 	const currentQuestion = questions[currentQuestionIndex];
-
-	console.log('window.innerWidth', window.innerWidth);
-	console.log('window.innerHeight', window.innerHeight);
-
 	const nextButtonOpacity = pointsGained === null ? 1 : 0;
 
 	return (
@@ -299,13 +252,13 @@ export default function Home() {
 			</div>
 
 			{/* Main: Question & Image */}
-			<div className='relative flex flex-1 flex-col items-center  w-full'>
+			<div className='relative flex flex-1 flex-col items-center w-full'>
 				<h2 className='text-2xl font-semibold mb-4'>{currentQuestion.name}</h2>
-				<div className='flex flex-1 relative xs:h-50 sm:h-100 md:h-70 w-full justify-center'>
-					{currentQuestion.image_url && (
+				<div className='flex flex-1 relative xs:h-50 sm:h-100 md:h-70 w-1/2 justify-center'>
+					{currentQuestion.imageUrl && (
 						<Image
 							className='border-4 border-gray-400 rounded-lg object-contain'
-							src={currentQuestion.image_url}
+							src={currentQuestion.imageUrl}
 							alt={currentQuestion.name}
 							fill={true}
 						/>
@@ -322,7 +275,7 @@ export default function Home() {
 								type='number'
 								value={userGuess}
 								onChange={(e) => setUserGuess(e.target.value)}
-								className='px-4 py-2 border rounded'
+								className='px-4 py-2 border rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
 								placeholder='Enter your guess'
 							/>
 							<button
@@ -352,13 +305,6 @@ export default function Home() {
 					)}
 				</div>
 			</div>
-
-			{/* Pop-up error */}
-			{popupError && (
-				<div className='fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-center px-6 py-3 rounded-lg shadow-xl z-50 transition-all duration-500'>
-					{popupError}
-				</div>
-			)}
 		</main>
 	);
 }
