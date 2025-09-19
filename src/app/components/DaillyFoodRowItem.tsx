@@ -8,7 +8,7 @@ interface DailyFoodRowItemProps {
 	newFood?: DailyFood;
 	setNewFood?: (food: DailyFood) => void;
 	handleSave?: () => void;
-	handleItemChange?: (index: number, value: string) => void;
+	handleItemChange?: (date: string, index: number, value: string) => void;
 	handleFetchData?: (index: number) => void;
 }
 
@@ -35,8 +35,7 @@ export default function DailyFoodRowItem({
 	}
 
 	function formatDate(dateString: string): string {
-		const formattedDateString = dateString.replace(/_/g, '-');
-		return formattedDateString;
+		return dateString.replace(/_/g, '-');
 	}
 
 	const isExistingItem = Boolean(date && items);
@@ -53,11 +52,9 @@ export default function DailyFoodRowItem({
 					className='text-white text-2xl font-bold text-center bg-transparent'
 					disabled={isExistingItem}
 				/>
-				{!isExistingItem && (
-					<button onClick={handleSave} className={BUTTON_CLASS}>
-						Save
-					</button>
-				)}
+				<button onClick={handleSave} className={BUTTON_CLASS}>
+					Save
+				</button>
 			</div>
 			<div className='text-black grid grid-cols-2 md:grid-cols-5 gap-4'>
 				{itemsToDisplay!.map((item, index) => (
@@ -74,19 +71,14 @@ export default function DailyFoodRowItem({
 								type='text'
 								placeholder='Food name'
 								value={item.name}
-								onChange={(e) => handleItemChange && handleItemChange(index, e.target.value)}
+								onChange={(e) =>
+									handleItemChange && handleItemChange(formattedDate, index, e.target.value)
+								}
 								className='font-medium w-full'
-								disabled={isExistingItem}
 							/>
-							{!isExistingItem && (
-								<button
-									onClick={() => handleFetchData!(index)}
-									className={BUTTON_CLASS + ' text-xs'}
-									disabled={!item.name}
-								>
-									Fetch
-								</button>
-							)}
+							<button onClick={() => handleFetchData!(index)} className={BUTTON_CLASS + ' text-xs'}>
+								Fetch
+							</button>
 						</div>
 						<div className='text-gray-600 text-sm'>{item.calories ?? '???'} calories</div>
 					</div>

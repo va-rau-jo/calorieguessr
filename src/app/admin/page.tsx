@@ -34,7 +34,6 @@ export default function AdminPage() {
 		const querySnapshot = await getDocs(dailyFoodsRef);
 		const foods: DailyFood[] = [];
 		querySnapshot.forEach((doc) => {
-			console.log(doc.data());
 			foods.push({
 				date: doc.id,
 				items: doc
@@ -60,10 +59,22 @@ export default function AdminPage() {
 		return null;
 	}
 
-	const handleItemChange = (index: number, name: string) => {
+	const handleNewItemChange = (_date: string, index: number, name: string) => {
 		const items = [...newFood.items];
 		items[index] = { ...items[index], name };
 		setNewFood({ ...newFood, items });
+	};
+
+	const handleExistingItemChange = (date: string, index: number, name: string) => {
+		const newDailyFoods = [...dailyFoods];
+		const formattedDate = date.replace(/-/g, '_');
+		const food = newDailyFoods.find((f) => f.date === formattedDate);
+		if (food) {
+			const items = [...food.items];
+			items[index] = { ...items[index], name };
+			food.items = items;
+		}
+		setDailyFoods(newDailyFoods);
 	};
 
 	const parseCaloriesFromJson = (jsonData: { food_description: string }): number => {
@@ -192,15 +203,28 @@ export default function AdminPage() {
 				newFood={newFood}
 				setNewFood={setNewFood}
 				handleSave={handleSave}
-				handleItemChange={handleItemChange}
+				handleItemChange={handleNewItemChange}
 				handleFetchData={handleFetchData}
 			/>
 
 			{/* Existing Daily Foods */}
 			<div className='grid gap-6'>
-				{dailyFoods.map(({ date, items }) => (
-					<DailyFoodRowItem key={date} date={date} items={items} />
-				))}
+				{dailyFoods.map(({ date, items }) => {
+					const placeholders = Array(Math.max(0, 10 - items.length)).fill({
+						name: '',
+						calories: 0,
+						imageUrl: '',
+					});
+					const displayItems = [...items, ...placeholders];
+					return (
+						<DailyFoodRowItem
+							key={date}
+							date={date}
+							items={displayItems}
+							handleItemChange={handleExistingItemChange}
+						/>
+					);
+				})}
 			</div>
 		</div>
 	);
