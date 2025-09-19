@@ -47,7 +47,6 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
 		try {
 			const userCredential = await signInWithPopup(auth, googleProvider);
 			const user = userCredential.user;
-
 			setUser(user);
 		} catch (error: unknown) {
 			if (error instanceof Error) {

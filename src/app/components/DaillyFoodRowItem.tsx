@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { DailyFood, FoodItem } from '../types';
+import { dateToHyphenated } from '../utils';
 
 interface DailyFoodRowItemProps {
 	date?: string;
@@ -9,11 +10,13 @@ interface DailyFoodRowItemProps {
 	setNewFood?: (food: DailyFood) => void;
 	handleSave?: () => void;
 	handleItemChange?: (date: string, index: number, value: string) => void;
-	handleFetchData?: (index: number) => void;
+	handleFetchData?: (date: string, index: number) => void;
 }
 
-const BUTTON_CLASS =
-	'cursor-pointer ml-auto bg-blue-500 disabled:bg-blue-300 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded';
+const BUTTON_CLASS = 'cursor-pointer ml-auto font-bold py-2 px-4 rounded';
+
+const BLUE_BACKGROUND_CLASS = 'text-white bg-blue-500 disabled:bg-blue-300 hover:bg-blue-700';
+const GREEN_BACKGROUND_CLASS = 'text-black bg-green-500 disabled:bg-green-300 hover:bg-green-700';
 
 export default function DailyFoodRowItem({
 	date,
@@ -34,13 +37,9 @@ export default function DailyFoodRowItem({
 		}
 	}
 
-	function formatDate(dateString: string): string {
-		return dateString.replace(/_/g, '-');
-	}
-
 	const isExistingItem = Boolean(date && items);
 	const itemsToDisplay = isExistingItem ? items : newFood!.items;
-	const formattedDate = formatDate(isExistingItem ? date! : newFood!.date);
+	const formattedDate = dateToHyphenated(isExistingItem ? date! : newFood!.date);
 
 	return (
 		<div className='rounded-lg shadow p-4 mb-6'>
@@ -52,7 +51,7 @@ export default function DailyFoodRowItem({
 					className='text-white text-2xl font-bold text-center bg-transparent'
 					disabled={isExistingItem}
 				/>
-				<button onClick={handleSave} className={BUTTON_CLASS}>
+				<button onClick={handleSave} className={BUTTON_CLASS + ' ' + GREEN_BACKGROUND_CLASS}>
 					Save
 				</button>
 			</div>
@@ -76,11 +75,14 @@ export default function DailyFoodRowItem({
 								}
 								className='font-medium w-full'
 							/>
-							<button onClick={() => handleFetchData!(index)} className={BUTTON_CLASS + ' text-xs'}>
+							<button
+								onClick={() => handleFetchData!(formattedDate, index)}
+								className={BUTTON_CLASS + ' text-xs ' + BLUE_BACKGROUND_CLASS}
+							>
 								Fetch
 							</button>
 						</div>
-						<div className='text-gray-600 text-sm'>{item.calories ?? '???'} calories</div>
+						{item.calories && <div className='text-gray-600 text-sm'>{item.calories} calories</div>}
 					</div>
 				))}
 			</div>
