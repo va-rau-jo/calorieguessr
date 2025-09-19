@@ -128,7 +128,7 @@ app.get('/api/food/image', async (req, res) => {
 		console.log('Fetching image for ', foodName);
 
 		const response = await fetch(
-			`${GOOGLE_SEARCH_API_URL}?key=${GOOGLE_SEARCH_API_KEY}&cx=${GOOGLE_SEARCH_ENGINE_ID}&q=${foodName}&searchType=image&num=1`
+			`${GOOGLE_SEARCH_API_URL}?key=${GOOGLE_SEARCH_API_KEY}&cx=${GOOGLE_SEARCH_ENGINE_ID}&q=${foodName}&searchType=image&num=5`
 		);
 
 		if (!response.ok) {
@@ -136,7 +136,9 @@ app.get('/api/food/image', async (req, res) => {
 		}
 
 		const data = await response.json();
-		const imageUrl = data.items?.[0]?.link;
+		console.log(data.items);
+		const imageUrl =
+			data.items?.find((item) => item.link.match(/\.(jpg|png)$/i))?.link || data.items?.[0]?.link;
 
 		console.log('Image URL: ', imageUrl);
 

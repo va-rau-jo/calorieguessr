@@ -12,15 +12,19 @@ export default function AdminPage() {
 	const date = new Date().toISOString().split('T')[0].replace(/-/g, '_');
 	const [newFood, setNewFood] = useState<DailyFood>({
 		date: date,
-		items: Array(10).fill({ name: '', calories: null, imageUrl: '' }),
+		items: Array(10).fill({ name: '', calories: 0, imageUrl: '' }),
 	});
 	const { user } = useFirebase();
 
-	const mapFirebaseFoodItem = (item: { name: string; calories: number | null }): FoodItem => {
+	const mapFirebaseFoodItem = (item: {
+		name: string;
+		calories: number;
+		imageUrl: string;
+	}): FoodItem => {
 		return {
 			name: item.name,
 			calories: item.calories,
-			imageUrl: '', // Default empty string for imageUrl since Firebase item doesn't include it
+			imageUrl: item.imageUrl,
 		};
 	};
 
@@ -35,7 +39,7 @@ export default function AdminPage() {
 				date: doc.id,
 				items: doc
 					.data()
-					.foods.map((item: { name: string; calories: number | null }) =>
+					.foods.map((item: { name: string; calories: number; imageUrl: string }) =>
 						mapFirebaseFoodItem(item)
 					),
 			});
@@ -48,18 +52,6 @@ export default function AdminPage() {
 			return;
 		}
 
-		const initApi = async () => {
-			try {
-				const initResponse = await fetch(`http://localhost:3001/api/init`);
-				if (!initResponse.ok) {
-					throw new Error('Failed to initialize food API.');
-				}
-			} catch (error) {
-				console.error('Error fetching questions with images:', error);
-			}
-		};
-
-		initApi();
 		fetchDailyFoods();
 	}, [fetchDailyFoods, user]);
 
@@ -74,6 +66,22 @@ export default function AdminPage() {
 		setNewFood({ ...newFood, items });
 	};
 
+	const parseCaloriesFromJson = (jsonData: { food_description: string }): number => {
+		const desc = jsonData['food_description'] as string;
+		const match = desc.match(/Calories:\s*(\d+)/);
+		let calories = match ? parseInt(match[1], 10) : 0;
+
+		const serving = desc.split('Calories')[0];
+		if (serving) {
+			const fraction = serving.split('Per')[1].trim();
+			const multiplier = parseInt(fraction.split('/')[1], 10);
+			if (!isNaN(multiplier)) {
+				calories *= multiplier;
+			}
+		}
+		return calories;
+	};
+
 	const handleFetchData = async (index: number) => {
 		const item = newFood.items[index];
 		console.log(item);
@@ -81,21 +89,21 @@ export default function AdminPage() {
 			// Fetch calories
 			console.log('Fetching calories...');
 			const caloriesRes = await fetch(`http://localhost:3001/api/food/calories?query=${item.name}`);
-			console.log(caloriesRes);
 			let calories = null;
 			if (caloriesRes.ok) {
 				const data = await caloriesRes.json();
-				calories = data.calories || null;
+				calories = parseCaloriesFromJson(data);
+				console.log('Calories: ', calories);
 			}
 
 			// Fetch image
 			console.log('Fetching image...');
 			const imageRes = await fetch(`http://localhost:3001/api/food/image?query=${item.name}`);
-			console.log(imageRes);
 			let imageUrl = '';
 			if (imageRes.ok) {
 				const data = await imageRes.json();
 				imageUrl = data.imageUrl || '';
+				console.log('Image URL: ', imageUrl);
 			}
 
 			// Update the new food item with the fetched data
@@ -108,16 +116,26 @@ export default function AdminPage() {
 	};
 
 	const handleSave = async () => {
-		if (!newFood.date) return;
+		console.log('SAVING ');
+		console.log(newFood);
+
+		const firebaseData = {
+			foods: newFood.items
+				.filter((item) => item.name && item.calories)
+				.map((item) => ({
+					name: item.name,
+					calories: item.calories,
+					imageUrl: item.imageUrl,
+				})),
+		};
+
+		console.log('FIREBASE DATA');
+		console.log(firebaseData);
+
 		const docRef = doc(db, 'dailyFoods', newFood.date);
-		await setDoc(docRef, { items: newFood.items });
+		await setDoc(docRef, firebaseData);
 		fetchDailyFoods();
 	};
-
-	console.log('DAILY FOODS');
-	console.log(dailyFoods);
-	console.log('NEW FOODS');
-	console.log(newFood);
 
 	return (
 		<div className='p-6'>
