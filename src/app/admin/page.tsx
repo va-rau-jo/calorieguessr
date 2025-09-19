@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '../firebase/config';
-import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, setDoc, doc, getDoc, Firestore } from 'firebase/firestore';
 import { useFirebase } from '../firebase/FirebaseProvider';
 import { DailyFood, FoodItem } from '../types';
 import DailyFoodRowItem from '../components/DaillyFoodRowItem';
@@ -82,28 +82,58 @@ export default function AdminPage() {
 		return calories;
 	};
 
+	const queryFoodsByName = async (db: Firestore, foodName: string) => {
+		const foodDocRef = doc(db, 'foodItems', foodName);
+
+		try {
+			const docSnap = await getDoc(foodDocRef);
+
+			if (docSnap.exists()) {
+				return docSnap.data();
+			} else {
+				console.log(`No food item found with the name: ${foodName}`);
+				return null;
+			}
+		} catch (error) {
+			console.error('Error retrieving food item:', error);
+			return null;
+		}
+	};
+
 	const handleFetchData = async (index: number) => {
 		const item = newFood.items[index];
-		console.log(item);
+		if (!item.name) return;
+
+		const itemName = item.name.toLowerCase();
+
 		try {
+			const existingFoodItem = await queryFoodsByName(db, itemName);
+
+			if (existingFoodItem) {
+				const items = [...newFood.items];
+				items[index] = {
+					...items[index],
+					calories: existingFoodItem.calories,
+					imageUrl: existingFoodItem.imageUrl,
+				};
+				setNewFood({ ...newFood, items });
+				return;
+			}
+
 			// Fetch calories
-			console.log('Fetching calories...');
 			const caloriesRes = await fetch(`http://localhost:3001/api/food/calories?query=${item.name}`);
 			let calories = null;
 			if (caloriesRes.ok) {
 				const data = await caloriesRes.json();
 				calories = parseCaloriesFromJson(data);
-				console.log('Calories: ', calories);
 			}
 
 			// Fetch image
-			console.log('Fetching image...');
 			const imageRes = await fetch(`http://localhost:3001/api/food/image?query=${item.name}`);
 			let imageUrl = '';
 			if (imageRes.ok) {
 				const data = await imageRes.json();
 				imageUrl = data.imageUrl || '';
-				console.log('Image URL: ', imageUrl);
 			}
 
 			// Update the new food item with the fetched data
@@ -132,9 +162,25 @@ export default function AdminPage() {
 		console.log('FIREBASE DATA');
 		console.log(firebaseData);
 
+		for (const item of newFood.items) {
+			if (item.name && item.calories && item.imageUrl) {
+				const itemName = item.name.toLowerCase();
+				const foodDocRef = doc(db, 'foodItems', itemName);
+				await setDoc(foodDocRef, {
+					name: item.name,
+					calories: item.calories,
+					imageUrl: item.imageUrl,
+				}).then(() => {
+					console.log(`Food item ${item.name} saved successfully`);
+				});
+			}
+		}
+
 		const docRef = doc(db, 'dailyFoods', newFood.date);
-		await setDoc(docRef, firebaseData);
-		fetchDailyFoods();
+		setDoc(docRef, firebaseData).then(() => {
+			console.log(`Daily food ${newFood.date} saved successfully`);
+			fetchDailyFoods();
+		});
 	};
 
 	return (
