@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { db } from '../firebase/config';
 import { collection, getDocs, setDoc, doc, getDoc, Firestore } from 'firebase/firestore';
 import { useFirebase } from '../firebase/FirebaseProvider';
-import { DailyFood, FoodItem } from '../types';
+import { DailyFood, FoodItem, mapFirebaseFoodItem } from '../types';
 import DailyFoodRowItem from '../components/DaillyFoodRowItem';
 import { dateToUnderscore } from '../utils';
 
@@ -17,18 +17,6 @@ export default function AdminPage() {
 		hasBeenUpdated: true,
 	});
 	const { user } = useFirebase();
-
-	const mapFirebaseFoodItem = (item: {
-		name: string;
-		calories: number;
-		imageUrl: string;
-	}): FoodItem => {
-		return {
-			name: item.name,
-			calories: item.calories,
-			imageUrl: item.imageUrl,
-		};
-	};
 
 	const fetchDailyFoods = useCallback(async () => {
 		if (!user) return;

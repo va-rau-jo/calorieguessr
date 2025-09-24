@@ -4,6 +4,18 @@ export interface FoodItem {
 	imageUrl?: string;
 }
 
+export const mapFirebaseFoodItem = (item: {
+	name: string;
+	calories: number;
+	imageUrl: string;
+}): FoodItem => {
+	return {
+		name: item.name,
+		calories: item.calories,
+		imageUrl: item.imageUrl,
+	};
+};
+
 export interface DailyFood {
 	date: string;
 	items: FoodItem[];

@@ -2,6 +2,7 @@ import React from 'react';
 import { useFirebase } from '../firebase/FirebaseProvider';
 import { deleteCookie } from '../utils';
 import { COOKIE_NAME_SCORE } from '../constants';
+import { useRouter } from 'next/navigation';
 
 const PLAY_BUTTON_CLASS =
 	'cursor-pointer w-full px-8 flex-1 py-4 bg-lime-500 hover:bg-lime-600 text-slate-900' +
@@ -22,6 +23,7 @@ interface HomePageProps {
 
 export default function HomePage({ loading, startGameCallback }: HomePageProps) {
 	const { user, signIn, signOut } = useFirebase();
+	const router = useRouter();
 
 	const isAdmin = user?.email === 'victor@lunenetworks.com';
 
@@ -79,10 +81,7 @@ export default function HomePage({ loading, startGameCallback }: HomePageProps) 
 					</div>
 					<div className='flex w-full justify-center items-center space-x-4'>
 						{/* Past Games button */}
-						<button
-							onClick={() => console.log('Coming soon: a list of your past games.')}
-							className={OTHER_BUTTON_CLASS}
-						>
+						<button onClick={() => router.push('/past-games')} className={OTHER_BUTTON_CLASS}>
 							Past Games
 						</button>
 

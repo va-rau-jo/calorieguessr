@@ -16,7 +16,7 @@ const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ score, pointsGained, scores
 	const shouldDisplayScores = scores.length > 0;
 
 	return (
-		<div className='flex flex-col fixed left-4 top-2 flex justify-center items-center pt-2'>
+		<div className='flex flex-col fixed left-4 top-2 flex justify-center items-center pt-2 font-mono'>
 			<div className='relative'>
 				<span className='px-4 py-2 bg-gray-800 rounded-lg text-white'>
 					Score: {Math.round(score)}

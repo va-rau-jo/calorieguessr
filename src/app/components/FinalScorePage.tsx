@@ -18,7 +18,7 @@ export class FinalScorePage extends React.Component<FinalScorePageProps> {
 			<main className='flex w-full flex-col items-center justify-center p-24'>
 				<h1 className='text-4xl font-bold mb-8'>Quiz Completed!</h1>
 				<h2 className='text-2xl mb-4'>Your final score is: {Math.round(score)}</h2>
-				<div className='flex w-full justify-center space-x-8'>
+				<div className='flex w-full justify-center space-x-8 font-mono'>
 					{scores.map((s, i) => (
 						<div key={i} className='flex flex-col items-center mb-4'>
 							<img
