@@ -14,6 +14,8 @@ export class FinalScorePage extends React.Component<FinalScorePageProps> {
 	render() {
 		const { score, scores, questions, backCallback } = this.props;
 
+		console.log(scores);
+
 		return (
 			<main className='flex w-full flex-col items-center justify-center p-24'>
 				<h1 className='text-4xl font-bold mb-8'>Quiz Completed!</h1>

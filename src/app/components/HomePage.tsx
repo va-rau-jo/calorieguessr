@@ -8,6 +8,10 @@ const PLAY_BUTTON_CLASS =
 	'cursor-pointer w-full px-8 flex-1 py-4 bg-lime-500 hover:bg-lime-600 text-slate-900' +
 	' font-bold rounded-full shadow-lg transition-transform duration-200 ease-in-out hover:scale-105';
 
+const DISABLED_PLAY_BUTTON_CLASS =
+	'w-full px-8 flex-1 py-4 bg-lime-500/50 text-slate-900' +
+	' font-bold rounded-full shadow-lg transition-transform duration-200 ease-in-out';
+
 const OTHER_BUTTON_CLASS =
 	'cursor-pointer w-full px-8 flex-1 py-4 bg-slate-700 hover:bg-slate-600 text-slate-200 ' +
 	'font-semibold rounded-full shadow-lg transition-transform duration-200 ease-in-out hover:scale-105';
@@ -75,7 +79,11 @@ export default function HomePage({ loading, startGameCallback }: HomePageProps) 
 				{/* Buttons container */}
 				<div className='w-full flex flex-col justify-center items-center space-y-4 mt-8'>
 					<div className='flex w-1/2 justify-center items-center'>
-						<button onClick={startGameCallback} disabled={loading} className={PLAY_BUTTON_CLASS}>
+						<button
+							onClick={startGameCallback}
+							disabled={loading}
+							className={loading ? DISABLED_PLAY_BUTTON_CLASS : PLAY_BUTTON_CLASS}
+						>
 							Play Daily Game
 						</button>
 					</div>

@@ -101,13 +101,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
 	};
 
 	if (isLoading) {
-		return (
-			<div className='min-h-screen flex items-center justify-center bg-gray-100 p-4'>
-				<div className='bg-white p-8 rounded-lg shadow-xl text-center'>
-					<p className='text-lg font-semibold text-gray-700'>Initializing...</p>
-				</div>
-			</div>
-		);
+		return null;
 	}
 
 	return <FirebaseContext.Provider value={contextValue}>{children}</FirebaseContext.Provider>;

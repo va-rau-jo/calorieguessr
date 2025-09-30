@@ -2,19 +2,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
 import ScoreDisplay from '../components/ScoreDisplay';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { FoodItem } from '../types';
-import {
-	dateToUnderscore,
-	getCookie,
-	setCookie,
-	deleteCookie,
-	dateToHyphenated,
-	getTodaysDateString,
-} from '../utils';
+import { getCookie, setCookie, deleteCookie, getTodaysDateString } from '../utils';
 import { FinalScorePage } from '../components/FinalScorePage';
 import { COOKIE_NAME_SCORE } from '../constants';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -56,25 +48,21 @@ export default function Home() {
 		const startGame = async (questions: FoodItem[]) => {
 			if (scoresCookie) {
 				const { date, scores } = JSON.parse(scoresCookie);
-				console.log(
-					'date: ' + date + 'scores: ' + scores.length + '| questions: ' + questions.length
-				);
 				if (date !== currentDate) {
 					deleteCookie(COOKIE_NAME_SCORE);
 				}
+				setScore(scores.reduce((sum: number, score: number) => sum + score, 0));
+				setScores(scores);
 				if (scores.length === questions.length) {
 					setShowFinalScore(true);
 					return;
 				} else {
-					setScore(scores.reduce((sum: number, score: number) => sum + score, 0));
-					setScores(scores);
 					setCurrentQuestionIndex(scores.length);
 					setGameStarted(true);
 					setShowFinalScore(false);
 					return;
 				}
 			}
-			console.log('STARTING GAME');
 			setGameStarted(true);
 			setShowFinalScore(false);
 			setCurrentQuestionIndex(0);
@@ -84,7 +72,6 @@ export default function Home() {
 
 		const initializeGame = async () => {
 			setLoading(true);
-			console.log('initializing game');
 
 			try {
 				let dateString;
@@ -96,14 +83,12 @@ export default function Home() {
 					dateString = getTodaysDateString();
 				}
 
-				console.log(dateString);
 				const docRef = doc(db, 'dailyFoods', dateString);
 				const docSnap = await getDoc(docRef);
 
 				if (docSnap.exists()) {
 					const data = docSnap.data();
 					if (data) {
-						console.log('setting questions');
 						setQuestions(data.foods);
 						return data.foods;
 					} else {
@@ -200,10 +185,8 @@ export default function Home() {
 
 		setShowAnswer(true);
 
-		const dateString = dateToUnderscore(today.toISOString().split('T')[0]);
-
 		const newScores = [...scores, points];
-		const cookieValue = JSON.stringify({ scores: newScores, date: dateString });
+		const cookieValue = JSON.stringify({ scores: newScores, date: todaysDateString });
 		setCookie(COOKIE_NAME_SCORE, cookieValue, 1);
 
 		// Initialize points (display starting value) and kick off animation
@@ -258,9 +241,7 @@ export default function Home() {
 			<main className='flex w-full flex-col items-center justify-center p-24'>
 				<p className='text-red-500 mb-4'>{error}</p>
 				<button
-					onClick={() => {
-						window.location.href = '/';
-					}}
+					onClick={() => router.push('/')}
 					className='px-8 py-4 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors'
 				>
 					Back
