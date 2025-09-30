@@ -6,6 +6,15 @@ export function dateToUnderscore(dateString: string): string {
 	return dateString.replace(/-/g, '_');
 }
 
+export function getTodaysDateString(): string {
+	const today = new Date(
+		new Date().toLocaleString('en-US', {
+			timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+		})
+	);
+	return dateToUnderscore(today.toISOString().split('T')[0]);
+}
+
 // Function to set a cookie
 export function setCookie(name: string, value: string, days: number) {
 	let expires = '';

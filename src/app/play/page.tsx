@@ -7,7 +7,14 @@ import ScoreDisplay from '../components/ScoreDisplay';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { FoodItem } from '../types';
-import { dateToUnderscore, getCookie, setCookie, deleteCookie, dateToHyphenated } from '../utils';
+import {
+	dateToUnderscore,
+	getCookie,
+	setCookie,
+	deleteCookie,
+	dateToHyphenated,
+	getTodaysDateString,
+} from '../utils';
 import { FinalScorePage } from '../components/FinalScorePage';
 import { COOKIE_NAME_SCORE } from '../constants';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -28,6 +35,7 @@ export default function Home() {
 	// The user's past scores
 	const [scores, setScores] = useState<number[]>([]);
 	const [showFinalScore, setShowFinalScore] = useState(false);
+	const [todaysDateString, setTodaysDateString] = useState('');
 
 	// --- Animation refs/state ---
 	const animFrameRef = useRef<number | null>(null);
@@ -39,25 +47,39 @@ export default function Home() {
 
 	// Initialize game data on component mount
 	useEffect(() => {
-		const scoreCookie = getCookie(COOKIE_NAME_SCORE);
-		console.log('cookie: ' + scoreCookie);
-		if (scoreCookie) {
-			const { score, scores } = JSON.parse(scoreCookie);
-			setScore(score);
-			setScores(scores);
-		}
+		const currentDate = getTodaysDateString();
+		setTodaysDateString(currentDate);
 
-		const startGame = async () => {
-			if (scoreCookie) {
-				setShowFinalScore(true);
-			} else {
-				console.log('STARTING GAME');
-				setGameStarted(true);
-				setShowFinalScore(false);
-				setCurrentQuestionIndex(0);
-				setScore(0);
-				setScores([]);
+		const scoresCookie = getCookie(COOKIE_NAME_SCORE);
+		console.log('cookie: ' + scoresCookie);
+
+		const startGame = async (questions: FoodItem[]) => {
+			if (scoresCookie) {
+				const { date, scores } = JSON.parse(scoresCookie);
+				console.log(
+					'date: ' + date + 'scores: ' + scores.length + '| questions: ' + questions.length
+				);
+				if (date !== currentDate) {
+					deleteCookie(COOKIE_NAME_SCORE);
+				}
+				if (scores.length === questions.length) {
+					setShowFinalScore(true);
+					return;
+				} else {
+					setScore(scores.reduce((sum: number, score: number) => sum + score, 0));
+					setScores(scores);
+					setCurrentQuestionIndex(scores.length);
+					setGameStarted(true);
+					setShowFinalScore(false);
+					return;
+				}
 			}
+			console.log('STARTING GAME');
+			setGameStarted(true);
+			setShowFinalScore(false);
+			setCurrentQuestionIndex(0);
+			setScore(0);
+			setScores([]);
 		};
 
 		const initializeGame = async () => {
@@ -71,12 +93,7 @@ export default function Home() {
 				if (dateParam) {
 					dateString = dateParam;
 				} else {
-					const today = new Date(
-						new Date().toLocaleString('en-US', {
-							timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-						})
-					);
-					dateString = dateToUnderscore(today.toISOString().split('T')[0]);
+					dateString = getTodaysDateString();
 				}
 
 				console.log(dateString);
@@ -88,6 +105,7 @@ export default function Home() {
 					if (data) {
 						console.log('setting questions');
 						setQuestions(data.foods);
+						return data.foods;
 					} else {
 						setError('Invalid data format received from database');
 					}
@@ -101,10 +119,10 @@ export default function Home() {
 				setLoading(false);
 			}
 		};
-		initializeGame().then(() => {
-			startGame();
+		initializeGame().then((questions: FoodItem[]) => {
+			startGame(questions);
 		});
-	}, [searchParams]); // Re-run when search params change
+	}, [questions.length, searchParams]); // Re-run when search params change
 
 	// Clean up animation on unmount or when showAnswer toggles away
 	useEffect(() => {
@@ -119,8 +137,6 @@ export default function Home() {
 	// Start the points/score animation (exactly 1000ms, linear)
 	const startPointsAnimation = (initialPoints: number) => {
 		// Guard: nothing to animate
-		console.log('Starting animation');
-		console.log(pointsGained);
 		if (initialPoints === null || initialPoints <= 0) {
 			// Ensure the UI reflects zero points added and unchanged score
 			setPointsGained(null);
@@ -135,7 +151,6 @@ export default function Home() {
 
 		// Cancel any previous animation before starting a new one
 		if (animFrameRef.current !== null) {
-			console.log('CANCELLING');
 			cancelAnimationFrame(animFrameRef.current);
 			setScores((s) => [...s, initialPoints]);
 			animFrameRef.current = null;
@@ -160,7 +175,6 @@ export default function Home() {
 				// Ensure exact final values
 				setTimeout(() => {
 					setPointsGained(null);
-					console.log('Setting scores streak');
 					setScores((s) => [...s, initialPoints]);
 				}, 1000);
 				setScore(animStartScoreRef.current + animInitialPointsRef.current);
@@ -186,6 +200,12 @@ export default function Home() {
 
 		setShowAnswer(true);
 
+		const dateString = dateToUnderscore(today.toISOString().split('T')[0]);
+
+		const newScores = [...scores, points];
+		const cookieValue = JSON.stringify({ scores: newScores, date: dateString });
+		setCookie(COOKIE_NAME_SCORE, cookieValue, 1);
+
 		// Initialize points (display starting value) and kick off animation
 		setPointsGained(points);
 		startPointsAnimationTimeoutRef.current = setTimeout(() => {
@@ -210,26 +230,22 @@ export default function Home() {
 		setPointsGained(null);
 
 		if (currentQuestionIndex < questions.length - 1) {
-			setCurrentQuestionIndex((i) => i + 1);
+			const newIndex = currentQuestionIndex + 1;
+			setCurrentQuestionIndex(newIndex);
 		} else {
 			setShowFinalScore(true);
 			setGameStarted(false);
-			const cookieValue = JSON.stringify({ score, scores });
-			setCookie('calorieGuessrScore', cookieValue, 1);
 		}
 	};
 
 	// Display fnial score page if we have loaded from Firebase (images are fetched)
 	if (!loading && showFinalScore) {
-		console.log('QUESTIONS');
-		console.log(questions);
 		return (
 			<FinalScorePage
 				score={score ?? 0}
 				scores={scores}
 				questions={questions}
 				backCallback={() => {
-					setShowFinalScore(false);
 					router.push('/');
 				}}
 			/>

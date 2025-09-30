@@ -185,6 +185,9 @@ export default function AdminPage() {
 					imageUrl: existingFoodItem.imageUrl,
 				};
 				foods.items = items;
+				console.log('Updated daily foods: ', foods);
+				setDailyFoods(newDailyFoods);
+
 				return;
 			}
 
