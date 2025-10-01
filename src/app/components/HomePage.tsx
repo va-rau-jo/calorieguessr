@@ -1,7 +1,6 @@
 import React from 'react';
 import { useFirebase } from '../firebase/FirebaseProvider';
-import { deleteCookie } from '../utils';
-import { COOKIE_NAME_SCORE } from '../constants';
+import { deleteAllCookies, printAllCookies } from './CookieManager';
 import { useRouter } from 'next/navigation';
 
 const PLAY_BUTTON_CLASS =
@@ -31,6 +30,9 @@ export default function HomePage({ loading, startGameCallback }: HomePageProps) 
 
 	const isAdmin = user?.email === 'victor@lunenetworks.com';
 
+	console.log('COOKIES');
+	printAllCookies();
+
 	return (
 		<div className='flex w-full items-center justify-center p-4 font-inter'>
 			{user ? (
@@ -50,7 +52,7 @@ export default function HomePage({ loading, startGameCallback }: HomePageProps) 
 						<button
 							className={`${LOGIN_BUTTON_CLASS}`}
 							onClick={() => {
-								deleteCookie(COOKIE_NAME_SCORE);
+								deleteAllCookies();
 								window.location.reload();
 							}}
 						>

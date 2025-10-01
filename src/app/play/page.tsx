@@ -6,7 +6,8 @@ import ScoreDisplay from '../components/ScoreDisplay';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { FoodItem } from '../types';
-import { getCookie, setCookie, deleteCookie, getTodaysDateString } from '../utils';
+import { getScoresFromCookie, printAllCookies, setScoresCookie } from '../components/CookieManager';
+import { getTodaysDateString } from '../utils';
 import { FinalScorePage } from '../components/FinalScorePage';
 import { COOKIE_NAME_SCORE } from '../constants';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -27,7 +28,7 @@ export default function Home() {
 	// The user's past scores
 	const [scores, setScores] = useState<number[]>([]);
 	const [showFinalScore, setShowFinalScore] = useState(false);
-	const [todaysDateString, setTodaysDateString] = useState('');
+	const [gameDateString, setGameDateString] = useState('');
 
 	// --- Animation refs/state ---
 	const animFrameRef = useRef<number | null>(null);
@@ -39,21 +40,14 @@ export default function Home() {
 
 	// Initialize game data on component mount
 	useEffect(() => {
-		const currentDate = getTodaysDateString();
-		setTodaysDateString(currentDate);
-
-		const scoresCookie = getCookie(COOKIE_NAME_SCORE);
-		console.log('cookie: ' + scoresCookie);
-
-		const startGame = async (questions: FoodItem[]) => {
-			if (scoresCookie) {
-				const { date, scores } = JSON.parse(scoresCookie);
-				if (date !== currentDate) {
-					deleteCookie(COOKIE_NAME_SCORE);
-				}
+		const startGame = async (gameDateString: string, questions: FoodItem[]) => {
+			const scores = getScoresFromCookie(gameDateString);
+			if (scores) {
+				// Resume from the saved cookie state.
 				setScore(scores.reduce((sum: number, score: number) => sum + score, 0));
 				setScores(scores);
 				if (scores.length === questions.length) {
+					// Show the final score if all questions have been answered
 					setShowFinalScore(true);
 					return;
 				} else {
@@ -63,6 +57,7 @@ export default function Home() {
 					return;
 				}
 			}
+			// No cookie, start a new game.
 			setGameStarted(true);
 			setShowFinalScore(false);
 			setCurrentQuestionIndex(0);
@@ -74,23 +69,18 @@ export default function Home() {
 			setLoading(true);
 
 			try {
-				let dateString;
-				const dateParam = searchParams.get('date');
+				// Set the current game's date to either today or the provided past game
+				const dateString = searchParams.get('date') || getTodaysDateString();
+				setGameDateString(dateString);
 
-				if (dateParam) {
-					dateString = dateParam;
-				} else {
-					dateString = getTodaysDateString();
-				}
-
+				// Fetch the questions for the current game date from Firebase
 				const docRef = doc(db, 'dailyFoods', dateString);
 				const docSnap = await getDoc(docRef);
-
 				if (docSnap.exists()) {
 					const data = docSnap.data();
 					if (data) {
 						setQuestions(data.foods);
-						return data.foods;
+						startGame(dateString, data.foods);
 					} else {
 						setError('Invalid data format received from database');
 					}
@@ -104,9 +94,7 @@ export default function Home() {
 				setLoading(false);
 			}
 		};
-		initializeGame().then((questions: FoodItem[]) => {
-			startGame(questions);
-		});
+		initializeGame();
 	}, [questions.length, searchParams]); // Re-run when search params change
 
 	// Clean up animation on unmount or when showAnswer toggles away
@@ -186,8 +174,7 @@ export default function Home() {
 		setShowAnswer(true);
 
 		const newScores = [...scores, points];
-		const cookieValue = JSON.stringify({ scores: newScores, date: todaysDateString });
-		setCookie(COOKIE_NAME_SCORE, cookieValue, 1);
+		setScoresCookie(newScores, gameDateString);
 
 		// Initialize points (display starting value) and kick off animation
 		setPointsGained(points);
