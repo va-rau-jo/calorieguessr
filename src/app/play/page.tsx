@@ -216,7 +216,7 @@ export default function Home() {
 				scores={scores}
 				questions={questions}
 				backCallback={() => {
-					router.push('/');
+					router.back();
 				}}
 			/>
 		);

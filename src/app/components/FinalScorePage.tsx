@@ -32,9 +32,9 @@ export class FinalScorePage extends React.Component<FinalScorePageProps> {
 				</div>
 				<button
 					onClick={backCallback}
-					className='px-8 py-4 bg-green-500 text-white font-bold rounded-lg hover:bg-green-700 transition-colors'
+					className='cursor-pointer px-4 py-2 bg-green-500 text-white font-bold rounded-lg hover:bg-green-700 transition-colors'
 				>
-					Back Home
+					Back
 				</button>
 			</main>
 		);

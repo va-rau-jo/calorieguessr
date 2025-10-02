@@ -31,7 +31,7 @@ export default function ScoreBubble({ scores, index }: ScoreBubbleProps) {
 	return (
 		<span
 			key={index}
-			className='px-1 py-1 rounded-[1vw]'
+			className='px-1 py-1 rounded-[1vw] w-14 text-center'
 			style={{ backgroundColor: scoreColors[index] }}
 		>
 			{score}

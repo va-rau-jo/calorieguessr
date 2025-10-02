@@ -65,30 +65,47 @@ export default function PastGamesPage() {
 				{pastGames.map((game) => (
 					<div
 						key={game.date}
-						onClick={() => handleDateClick(game.date)}
-						className='w-1/2 flex p-4 bg-white rounded-lg shadow cursor-pointer hover:bg-gray-50 transition-colors'
+						onClick={!game.scores ? () => handleDateClick(game.date) : undefined}
+						className='w-1/2 flex p-4 bg-white rounded-lg shadow hover:bg-gray-50 transition-colors'
 					>
-						<div className='flex flex-col justify-center'>
+						<div className='flex flex-col space-y-2 justify-center'>
 							<p className='text-black text-lg'>{dateToHyphenated(game.date)}</p>
 							{game.scores && (
 								<p className='text-sm text-gray-500'>
 									Total Score: {game.scores.reduce((acc, curr) => acc + curr, 0)}
 								</p>
 							)}
+							{game.scores && game.scores.length != 5 ? (
+								<button
+									onClick={() => handleDateClick(game.date)}
+									className='w-fit px-4 py-2 bg-blue-700/75 text-white text-sm rounded-lg cursor-pointer'
+								>
+									Continue
+								</button>
+							) : null}
 						</div>
 						<div className='flex flex-1 space-x-4 items-center justify-center'>
-							{game.scores
-								? game.scores.map((s, i) => (
-										<div key={i} className='flex flex-col items-center mb-4'>
-											<img
-												src={game.items[i].imageUrl}
-												alt={game.items[i].name}
-												className='border border-black border-2 w-24 h-24 object-cover rounded-lg mb-2'
-											/>
-											<ScoreBubble index={i} scores={game.scores!} />
-										</div>
-								  ))
-								: null}
+							{game.scores ? (
+								game.scores.map((s, i) => (
+									<div key={i} className='flex flex-col items-center'>
+										<img
+											src={game.items[i].imageUrl}
+											alt={game.items[i].name}
+											className='border border-black border-2 w-24 h-24 object-cover rounded-lg mb-2'
+										/>
+										<ScoreBubble index={i} scores={game.scores!} />
+									</div>
+								))
+							) : (
+								<div>
+									<button
+										onClick={() => handleDateClick(game.date)}
+										className='px-4 py-2 bg-blue-700 text-white rounded-lg cursor-pointer'
+									>
+										Play!
+									</button>
+								</div>
+							)}
 						</div>
 					</div>
 				))}
