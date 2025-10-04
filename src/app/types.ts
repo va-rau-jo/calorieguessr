@@ -23,3 +23,8 @@ export interface DailyFood {
 	// updated don't get saved to Firebase.
 	hasBeenUpdated: boolean;
 }
+
+export interface Game {
+	scores: number[];
+	gameCompleted: boolean;
+}

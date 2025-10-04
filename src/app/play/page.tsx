@@ -6,10 +6,10 @@ import ScoreDisplay from '../components/ScoreDisplay';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { FoodItem } from '../types';
-import { getScoresFromCookie, printAllCookies, setScoresCookie } from '../components/CookieManager';
+import { getScoresFromCookie, printAllCookies, setGameCookie } from '../components/CookieManager';
 import { getTodaysDateString } from '../utils';
 import { FinalScorePage } from '../components/FinalScorePage';
-import { COOKIE_NAME_SCORE } from '../constants';
+import Button, { ButtonColor, ButtonRound, ButtonSize } from '../components/Button';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function Home() {
@@ -174,7 +174,8 @@ export default function Home() {
 		setShowAnswer(true);
 
 		const newScores = [...scores, points];
-		setScoresCookie(newScores, gameDateString);
+		const gameCompleted = currentQuestionIndex === questions.length - 1;
+		setGameCookie(newScores, gameDateString, gameCompleted);
 
 		// Initialize points (display starting value) and kick off animation
 		setPointsGained(points);
@@ -227,12 +228,14 @@ export default function Home() {
 		return (
 			<main className='flex w-full flex-col items-center justify-center p-24'>
 				<p className='text-red-500 mb-4'>{error}</p>
-				<button
+				<Button
 					onClick={() => router.push('/')}
-					className='px-8 py-4 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors'
+					color={ButtonColor.Blue}
+					size={ButtonSize.Large}
+					round={ButtonRound.Full}
 				>
 					Back
-				</button>
+				</Button>
 			</main>
 		);
 	}
@@ -282,32 +285,36 @@ export default function Home() {
 								type='number'
 								value={userGuess}
 								onChange={(e) => setUserGuess(e.target.value)}
-								className='px-4 py-2 border rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+								className='px-4 py-2 mb-4 border rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
 								placeholder='Enter your guess'
 							/>
-							<button
+							<Button
 								onClick={handleGuess}
-								className='mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors'
+								color={ButtonColor.Blue}
+								size={ButtonSize.Large}
+								round={ButtonRound.Large}
 							>
 								Guess
-							</button>
+							</Button>
 						</>
 					) : (
 						<>
 							<div className='font-mono'>
 								<p>Your Answer: {userGuess}</p>
 							</div>
-							<div className='font-mono'>
+							<div className='font-mono mb-4'>
 								<p>Correct Answer: {currentQuestion.calories}</p>
 							</div>
-							<button
+							<Button
 								onClick={nextQuestion}
 								style={{ opacity: nextButtonOpacity }}
 								disabled={nextButtonOpacity === 0}
-								className='mt-4 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors'
+								color={ButtonColor.Green}
+								size={ButtonSize.Large}
+								round={ButtonRound.Large}
 							>
 								Next
-							</button>
+							</Button>
 						</>
 					)}
 				</div>

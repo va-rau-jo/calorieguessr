@@ -1,4 +1,6 @@
+
 import { COOKIE_NAME_SCORE } from '../constants';
+import { Game } from '../types';
 
 // Function to set a cookie
 function _setCookie(name: string, value: string, days: number) {
@@ -40,7 +42,7 @@ export function printAllCookies(): void {
 
 	cookies.forEach((cookie) => {
 		const trimmedCookie = cookie.trim();
-		// Split the cookie into name and value at the first '=' sign
+		// Split the cookie into name and value at the first '='
 		const [name, value] = trimmedCookie.split('='); // The regex handles values that contain '='
 		console.log(`Cookie Name: ${name.trim()} | Value: ${value ? value.trim() : ''}`);
 	});
@@ -73,14 +75,37 @@ export function deleteAllCookies(): void {
 }
 
 /**
- * Sets a cookie with the scores for the given date string.
+ * Sets a cookie with the game data for the given date string.
  * @param scores - The array of scores to be stored in the cookie.
  * @param dateString - The date string in the format 'YYYY-MM-DD'.
+ * @param gameCompleted - Whether the game has been completed.
  */
-export function setScoresCookie(scores: number[], dateString: string) {
-	const cookieValue = JSON.stringify({ scores: scores, date: dateString });
+export function setGameCookie(
+	scores: number[],
+	dateString: string,
+	gameCompleted: boolean,
+) {
+	const cookieValue = JSON.stringify({
+		scores: scores,
+		date: dateString,
+		gameCompleted: gameCompleted,
+	});
 	const cookieName = COOKIE_NAME_SCORE + '_' + dateString;
 	_setCookie(cookieName, cookieValue, 1);
+}
+
+/**
+ * Retrieves the game data for the given date string from the cookie.
+ * @param dateString - The date string in the format 'YYYY-MM-DD'.
+ * @returns The game data if the cookie exists for the given date, otherwise null.
+ */
+export function getGameFromCookie(underscoreDate: string): Game | null {
+	const cookieName = COOKIE_NAME_SCORE + '_' + underscoreDate;
+	const cookieValue = _getCookie(cookieName);
+	if (cookieValue) {
+		return JSON.parse(cookieValue);
+	}
+	return null;
 }
 
 /**
@@ -89,10 +114,9 @@ export function setScoresCookie(scores: number[], dateString: string) {
  * @returns The array of scores if the cookie exists for the given date, otherwise null.
  */
 export function getScoresFromCookie(underscoreDate: string): number[] | null {
-	const cookieName = COOKIE_NAME_SCORE + '_' + underscoreDate;
-	const cookieValue = _getCookie(cookieName);
-	if (cookieValue) {
-		return JSON.parse(cookieValue).scores;
+	const game = getGameFromCookie(underscoreDate);
+	if (game) {
+		return game.scores;
 	}
 	return null;
 }

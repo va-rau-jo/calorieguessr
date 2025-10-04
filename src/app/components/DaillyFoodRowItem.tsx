@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import React from 'react';
 import { DailyFood, FoodItem } from '../types';
-import { dateToHyphenated } from '../utils';
+import Button, { ButtonColor } from './Button';
 
 interface DailyFoodRowItemProps {
 	date?: string;
@@ -51,9 +51,9 @@ export default function DailyFoodRowItem({
 					className='text-white text-2xl font-bold text-center bg-transparent'
 					disabled={isExistingItem}
 				/>
-				<button onClick={handleSave} className={BUTTON_CLASS + ' ' + GREEN_BACKGROUND_CLASS}>
+								<Button onClick={handleSave} color={ButtonColor.Secondary}>
 					Save
-				</button>
+				</Button>
 			</div>
 			<div className='text-black grid grid-cols-2 md:grid-cols-5 gap-4'>
 				{itemsToDisplay!.map((item, index) => (
@@ -75,12 +75,11 @@ export default function DailyFoodRowItem({
 								}
 								className='font-medium w-full'
 							/>
-							<button
+														<Button
 								onClick={() => handleFetchData!(formattedDate, index)}
-								className={BUTTON_CLASS + ' text-xs ' + BLUE_BACKGROUND_CLASS}
 							>
 								Fetch
-							</button>
+							</Button>
 						</div>
 						{item.calories && <div className='text-gray-600 text-sm'>{item.calories} calories</div>}
 					</div>

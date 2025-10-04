@@ -1,23 +1,8 @@
 import React from 'react';
 import { useFirebase } from '../firebase/FirebaseProvider';
-import { deleteAllCookies, printAllCookies } from './CookieManager';
+import { deleteAllCookies } from './CookieManager';
 import { useRouter } from 'next/navigation';
-
-const PLAY_BUTTON_CLASS =
-	'cursor-pointer w-full px-8 flex-1 py-4 bg-lime-500 hover:bg-lime-600 text-slate-900' +
-	' font-bold rounded-full shadow-lg transition-transform duration-200 ease-in-out hover:scale-105';
-
-const DISABLED_PLAY_BUTTON_CLASS =
-	'w-full px-8 flex-1 py-4 bg-lime-500/50 text-slate-900' +
-	' font-bold rounded-full shadow-lg transition-transform duration-200 ease-in-out';
-
-const OTHER_BUTTON_CLASS =
-	'cursor-pointer w-full px-8 flex-1 py-4 bg-slate-700 hover:bg-slate-600 text-slate-200 ' +
-	'font-semibold rounded-full shadow-lg transition-transform duration-200 ease-in-out hover:scale-105';
-
-const LOGIN_BUTTON_CLASS =
-	'cursor-pointer px-6 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 ' +
-	'font-semibold rounded-full shadow-lg transition-transform duration-200 ease-in-out hover:scale-105';
+import Button, { ButtonColor, ButtonRound, ButtonSize } from './Button';
 
 interface HomePageProps {
 	loading: boolean;
@@ -30,40 +15,51 @@ export default function HomePage({ loading, startGameCallback }: HomePageProps) 
 
 	const isAdmin = user?.email === 'victor@lunenetworks.com';
 
-	console.log('COOKIES');
-	printAllCookies();
-
 	return (
 		<div className='flex w-full items-center justify-center p-4 font-inter'>
 			{user ? (
 				<div className='flex absolute top-4 right-4'>
-					<button className={`${LOGIN_BUTTON_CLASS} `} onClick={signOut}>
+					<Button
+						onClick={signOut}
+						color={ButtonColor.Secondary}
+						size={ButtonSize.Large}
+						round={ButtonRound.Full}
+					>
 						Sign Out
-					</button>
+					</Button>
 					{isAdmin && (
-						<button
-							className={`${LOGIN_BUTTON_CLASS}`}
+						<Button
 							onClick={() => (window.location.href = '/admin')}
+							color={ButtonColor.Secondary}
+							size={ButtonSize.Small}
+							round={ButtonRound.Full}
 						>
 							Admin
-						</button>
+						</Button>
 					)}
 					{isAdmin && (
-						<button
-							className={`${LOGIN_BUTTON_CLASS}`}
+						<Button
 							onClick={() => {
 								deleteAllCookies();
 								window.location.reload();
 							}}
+							color={ButtonColor.Secondary}
+							size={ButtonSize.Small}
+							round={ButtonRound.Full}
 						>
 							Clear Cookies
-						</button>
+						</Button>
 					)}
 				</div>
 			) : (
-				<button className={`${LOGIN_BUTTON_CLASS} absolute top-4 right-4`} onClick={signIn}>
+				<Button
+					onClick={signIn}
+					color={ButtonColor.Secondary}
+					size={ButtonSize.Small}
+					round={ButtonRound.Full}
+				>
 					Sign In
-				</button>
+				</Button>
 			)}
 
 			{/* Main container for the landing page content */}
@@ -81,27 +77,34 @@ export default function HomePage({ loading, startGameCallback }: HomePageProps) 
 				{/* Buttons container */}
 				<div className='w-full flex flex-col justify-center items-center space-y-4 mt-8'>
 					<div className='flex w-1/2 justify-center items-center'>
-						<button
+						<Button
 							onClick={startGameCallback}
 							disabled={loading}
-							className={loading ? DISABLED_PLAY_BUTTON_CLASS : PLAY_BUTTON_CLASS}
+							color={ButtonColor.Lime}
+							size={ButtonSize.ExtraLarge}
+							round={ButtonRound.Full}
 						>
 							Play Daily Game
-						</button>
+						</Button>
 					</div>
 					<div className='flex w-full justify-center items-center space-x-4'>
-						{/* Past Games button */}
-						<button onClick={() => router.push('/past-games')} className={OTHER_BUTTON_CLASS}>
+						<Button
+							onClick={() => router.push('/past-games')}
+							color={ButtonColor.Secondary}
+							size={ButtonSize.Large}
+							round={ButtonRound.Full}
+						>
 							Past Games
-						</button>
+						</Button>
 
-						{/* Your Stats button */}
-						<button
+						<Button
 							onClick={() => console.log('Coming soon: your user stats.')}
-							className={OTHER_BUTTON_CLASS}
+							color={ButtonColor.Secondary}
+							size={ButtonSize.Large}
+							round={ButtonRound.Full}
 						>
 							Your Stats
-						</button>
+						</Button>
 					</div>
 				</div>
 

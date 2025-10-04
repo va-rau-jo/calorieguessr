@@ -5,16 +5,17 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useRouter } from 'next/navigation';
-import { DailyFood, FoodItem, mapFirebaseFoodItem } from '../types';
+import { DailyFood, FoodItem, Game, mapFirebaseFoodItem } from '../types';
 import { dateToHyphenated } from '../utils';
-import { getScoresFromCookie } from '../components/CookieManager';
+import { getGameFromCookie } from '../components/CookieManager';
+import Button from '../components/Button';
 import ScoreBubble from '../components/ScoreBubble';
 
 // Represents a past game with its date, items, and scores (if available).
 type PastGame = {
 	date: string;
 	items: FoodItem[];
-	scores: number[] | null;
+	game: Game | null;
 };
 
 export default function PastGamesPage() {
@@ -31,7 +32,7 @@ export default function PastGamesPage() {
 				const pastGames: PastGame[] = [];
 				querySnapshot.forEach((doc) => {
 					const underscoreDate = doc.id;
-					const scores = getScoresFromCookie(underscoreDate);
+					const game = getGameFromCookie(underscoreDate);
 					pastGames.push({
 						date: underscoreDate,
 						items: doc
@@ -39,7 +40,7 @@ export default function PastGamesPage() {
 							.foods.map((item: { name: string; calories: number; imageUrl: string }) =>
 								mapFirebaseFoodItem(item)
 							),
-						scores: scores,
+						game: game,
 					});
 				});
 				setPastGames(pastGames);
@@ -62,48 +63,38 @@ export default function PastGamesPage() {
 		<div className='container mx-auto px-4 py-8'>
 			<h1 className='text-3xl font-bold mb-6'>Past Games</h1>
 			<div className='flex flex-col items-center space-y-2'>
-				{pastGames.map((game) => (
+				{pastGames.map((pastGame) => (
 					<div
-						key={game.date}
-						onClick={!game.scores ? () => handleDateClick(game.date) : undefined}
+						key={pastGame.date}
+						onClick={!pastGame.game ? () => handleDateClick(pastGame.date) : undefined}
 						className='w-1/2 flex p-4 bg-white rounded-lg shadow hover:bg-gray-50 transition-colors'
 					>
 						<div className='flex flex-col space-y-2 justify-center'>
-							<p className='text-black text-lg'>{dateToHyphenated(game.date)}</p>
-							{game.scores && (
-								<p className='text-sm text-gray-500'>
-									Total Score: {game.scores.reduce((acc, curr) => acc + curr, 0)}
+							<p className='text-black text-lg'>{dateToHyphenated(pastGame.date)}</p>
+							{pastGame.game && (
+								<p className='text-lg text-gray-500'>
+									Total: {pastGame.game.scores.reduce((acc, curr) => acc + curr, 0)}
 								</p>
 							)}
-							{game.scores && game.scores.length != 5 ? (
-								<button
-									onClick={() => handleDateClick(game.date)}
-									className='w-fit px-4 py-2 bg-blue-700/75 text-white text-sm rounded-lg cursor-pointer'
-								>
-									Continue
-								</button>
+							{pastGame.game && !pastGame.game.gameCompleted ? (
+								<Button onClick={() => handleDateClick(pastGame.date)}>Continue</Button>
 							) : null}
 						</div>
 						<div className='flex flex-1 space-x-4 items-center justify-center'>
-							{game.scores ? (
-								game.scores.map((s, i) => (
+							{pastGame.game ? (
+								pastGame.game.scores.map((s, i) => (
 									<div key={i} className='flex flex-col items-center'>
 										<img
-											src={game.items[i].imageUrl}
-											alt={game.items[i].name}
+											src={pastGame.items[i].imageUrl}
+											alt={pastGame.items[i].name}
 											className='border border-black border-2 w-24 h-24 object-cover rounded-lg mb-2'
 										/>
-										<ScoreBubble index={i} scores={game.scores!} />
+										<ScoreBubble index={i} scores={pastGame.game!.scores!} />
 									</div>
 								))
 							) : (
 								<div>
-									<button
-										onClick={() => handleDateClick(game.date)}
-										className='px-4 py-2 bg-blue-700 text-white rounded-lg cursor-pointer'
-									>
-										Play!
-									</button>
+									<Button onClick={() => handleDateClick(pastGame.date)}>Play!</Button>
 								</div>
 							)}
 						</div>

@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import React from 'react';
 import { FoodItem } from '../types';
+import Button, { ButtonColor, ButtonRound, ButtonSize } from './Button';
 import ScoreBubble from './ScoreBubble';
 
 interface FinalScorePageProps {
@@ -30,12 +31,14 @@ export class FinalScorePage extends React.Component<FinalScorePageProps> {
 						</div>
 					))}
 				</div>
-				<button
+				<Button
 					onClick={backCallback}
-					className='cursor-pointer px-4 py-2 bg-green-500 text-white font-bold rounded-lg hover:bg-green-700 transition-colors'
+					color={ButtonColor.Blue}
+					size={ButtonSize.Large}
+					round={ButtonRound.Large}
 				>
 					Back
-				</button>
+				</Button>
 			</main>
 		);
 	}

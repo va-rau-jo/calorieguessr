@@ -5,8 +5,9 @@ import { db } from '../firebase/config';
 import { collection, getDocs, setDoc, doc, getDoc, Firestore } from 'firebase/firestore';
 import { useFirebase } from '../firebase/FirebaseProvider';
 import { DailyFood, FoodItem, mapFirebaseFoodItem } from '../types';
-import DailyFoodRowItem from '../components/DaillyFoodRowItem';
+import Button from '../components/Button';
 import { dateToUnderscore } from '../utils';
+import DailyFoodRowItem from '../components/DaillyFoodRowItem';
 
 export default function AdminPage() {
 	const [dailyFoods, setDailyFoods] = useState<DailyFood[]>([]);
@@ -282,12 +283,7 @@ export default function AdminPage() {
 	return (
 		<div className='w-full p-6'>
 			<h2 className='text-2xl font-bold mb-6'>Admin Dashboard</h2>
-			<button
-				onClick={() => (window.location.href = '/')}
-				className='mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors'
-			>
-				Back to Home
-			</button>
+			<Button onClick={() => (window.location.href = '/')}>Back to Home</Button>
 
 			{/* Add New Food Form */}
 			<DailyFoodRowItem
