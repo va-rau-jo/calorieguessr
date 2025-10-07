@@ -249,7 +249,7 @@ export default function Home() {
 		<main className='flex w-full flex-col items-center space-y-4 px-24'>
 			{/* Top: Score & Question Number */}
 			<div className='flex z-10 max-w-5xl w-full items-center justify-center'>
-				<div className='text-2xl fixed right-16 flex justify-center pb-6 pt-8'>
+				<div className='text-2xl fixed right-4 flex justify-center pb-6 pt-8'>
 					<ScoreDisplay score={score ?? 0} pointsGained={pointsGained} scores={scores} />
 				</div>
 				<div className='text-2xl fixed left-8 flex justify-center pb-6 pt-8'>

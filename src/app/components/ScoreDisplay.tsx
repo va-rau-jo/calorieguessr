@@ -17,23 +17,27 @@ const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ score, pointsGained, scores
 
 	return (
 		<div className='flex flex-col justify-center items-center pt-2 font-mono'>
-			<div className='relative'>
-				<span className='px-4 py-2 bg-gray-800 rounded-lg text-white'>
-					Score: {Math.round(score)}
-				</span>
-				{pointsGained !== null && (
-					<span className={`absolute my-auto ml-2 ${pointColor} transition-opacity duration-300`}>
-						+{Math.round(pointsGained)}
-					</span>
-				)}
-			</div>
-			{shouldDisplayScores ? (
-				<div className='mt-4 flex space-x-2 text-sm'>
-					{scores.map((score, index) => (
-						<ScoreBubble key={index} index={index} scores={scores} />
-					))}
+			<div className='flex align-top relative'>
+				<div className='flex mr-2 py-2'>
+					{pointsGained !== null && (
+						<span className={`${pointColor} transition-opacity duration-300`}>
+							+{Math.round(pointsGained)}
+						</span>
+					)}
 				</div>
-			) : null}
+				<div className='flex flex-col'>
+					<span className='px-4 py-2 bg-gray-800 rounded-lg text-white'>
+						Score: {Math.round(score)}
+					</span>
+					{shouldDisplayScores ? (
+						<div className='mt-2 flex justify-center space-x-2 text-sm'>
+							{scores.map((_, index) => (
+								<ScoreBubble key={index} index={index} scores={scores} />
+							))}
+						</div>
+					) : null}
+				</div>
+			</div>
 		</div>
 	);
 };
