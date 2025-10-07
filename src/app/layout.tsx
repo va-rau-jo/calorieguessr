@@ -1,16 +1,12 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Gluten } from 'next/font/google';
 import './globals.css';
 import { FirebaseProvider } from './firebase/FirebaseProvider';
 
-const geistSans = Geist({
-	variable: '--font-geist-sans',
+const gluten = Gluten({
+	variable: '--font-gluten',
 	subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-	variable: '--font-geist-mono',
-	subsets: ['latin'],
+	weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
 });
 
 export const metadata: Metadata = {
@@ -25,7 +21,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang='en'>
-			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+			<body className={`${gluten.variable} antialiased`}>
 				<FirebaseProvider>
 					<div className='flex w-full bg-slate-900 text-white min-h-screen'>{children}</div>
 				</FirebaseProvider>

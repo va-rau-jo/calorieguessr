@@ -5,10 +5,10 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useRouter } from 'next/navigation';
-import { DailyFood, FoodItem, Game, mapFirebaseFoodItem } from '../types';
+import { FoodItem, Game, mapFirebaseFoodItem } from '../types';
 import { dateToHyphenated } from '../utils';
 import { getGameFromCookie } from '../components/CookieManager';
-import Button from '../components/Button';
+import Button, { ButtonColor, ButtonRound } from '../components/Button';
 import ScoreBubble from '../components/ScoreBubble';
 
 // Represents a past game with its date, items, and scores (if available).
@@ -44,9 +44,6 @@ export default function PastGamesPage() {
 					});
 				});
 				setPastGames(pastGames);
-
-				console.log('PAST GAMES');
-				console.log(pastGames);
 			} catch (error) {
 				console.error('Error fetching past games:', error);
 			}
@@ -61,7 +58,14 @@ export default function PastGamesPage() {
 
 	return (
 		<div className='container mx-auto px-4 py-8'>
-			<h1 className='text-3xl font-bold mb-6'>Past Games</h1>
+			<Button
+				onClick={() => router.back()}
+				round={ButtonRound.Large}
+				additionalClassNames='absolute top-4 left-4'
+			>
+				← Back
+			</Button>
+			<h1 className='text-3xl text-center font-bold mb-6'>Past Games</h1>
 			<div className='flex flex-col items-center space-y-2'>
 				{pastGames.map((pastGame) => (
 					<div
@@ -94,7 +98,9 @@ export default function PastGamesPage() {
 								))
 							) : (
 								<div>
-									<Button onClick={() => handleDateClick(pastGame.date)}>Play!</Button>
+									<Button color={ButtonColor.Blue} onClick={() => handleDateClick(pastGame.date)}>
+										Play!
+									</Button>
 								</div>
 							)}
 						</div>

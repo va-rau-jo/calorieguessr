@@ -6,7 +6,7 @@ import ScoreDisplay from '../components/ScoreDisplay';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { FoodItem } from '../types';
-import { getScoresFromCookie, printAllCookies, setGameCookie } from '../components/CookieManager';
+import { getScoresFromCookie, setGameCookie } from '../components/CookieManager';
 import { getTodaysDateString } from '../utils';
 import { FinalScorePage } from '../components/FinalScorePage';
 import Button, { ButtonColor, ButtonRound, ButtonSize } from '../components/Button';
@@ -223,18 +223,13 @@ export default function Home() {
 		);
 	}
 
-	// Display error page if we have an error (should never happen)
+	// Display error page if we have an error (or no questions for today)
 	if (error) {
 		return (
 			<main className='flex w-full flex-col items-center justify-center p-24'>
 				<p className='text-red-500 mb-4'>{error}</p>
-				<Button
-					onClick={() => router.push('/')}
-					color={ButtonColor.Blue}
-					size={ButtonSize.Large}
-					round={ButtonRound.Full}
-				>
-					Back
+				<Button onClick={() => router.back()} size={ButtonSize.Large} round={ButtonRound.Large}>
+					← Back
 				</Button>
 			</main>
 		);
@@ -254,8 +249,13 @@ export default function Home() {
 		<main className='flex w-full flex-col items-center space-y-4 px-24'>
 			{/* Top: Score & Question Number */}
 			<div className='flex z-10 max-w-5xl w-full items-center justify-center'>
-				<div className='text-2xl fixed left-8 top-8 flex justify-center pb-6 pt-8'>
+				<div className='text-2xl fixed right-16 flex justify-center pb-6 pt-8'>
 					<ScoreDisplay score={score ?? 0} pointsGained={pointsGained} scores={scores} />
+				</div>
+				<div className='text-2xl fixed left-8 flex justify-center pb-6 pt-8'>
+					<Button onClick={() => router.back()} round={ButtonRound.Large}>
+						← Back
+					</Button>
 				</div>
 				<div className='text-3xl font-bold flex justify-center pb-6 pt-8'>
 					Question {currentQuestionIndex + 1} / {questions.length}

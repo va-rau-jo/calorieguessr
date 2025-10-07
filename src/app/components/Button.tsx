@@ -24,6 +24,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 	color?: ButtonColor;
 	size?: ButtonSize;
 	round?: ButtonRound;
+	additionalClassNames?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -31,6 +32,7 @@ const Button: React.FC<ButtonProps> = ({
 	size = ButtonSize.Medium,
 	round = ButtonRound.Large,
 	disabled = false,
+	additionalClassNames = '',
 	onClick,
 	children,
 	...props
@@ -82,6 +84,7 @@ const Button: React.FC<ButtonProps> = ({
 
 	const className = `
     ${baseClasses}
+    ${additionalClassNames}
     ${sizeClasses[size]}
     ${colorClasses[color].base}
     ${roundClasses[round]}
