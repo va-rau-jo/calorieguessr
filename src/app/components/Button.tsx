@@ -38,7 +38,7 @@ const Button: React.FC<ButtonProps> = ({
 	...props
 }) => {
 	const baseClasses =
-		'font-bold rounded transition-transform duration-200 ease-in-out hover:scale-105 cursor-pointer';
+		' font-bold rounded transition-transform duration-200 ease-in-out hover:scale-105 cursor-pointer uppercase';
 
 	const sizeClasses = {
 		[ButtonSize.Small]: 'text-sm py-2 px-4',
@@ -49,9 +49,9 @@ const Button: React.FC<ButtonProps> = ({
 
 	const colorClasses = {
 		[ButtonColor.Lime]: {
-			base: 'bg-lime-500 text-black',
-			hover: 'hover:bg-lime-700',
-			disabled: 'bg-lime-300 cursor-not-allowed',
+			base: 'bg-[#2DA87B] text-white',
+			hover: 'hover:bg-[#248561]',
+			disabled: 'bg-[#79ab99] cursor-not-allowed',
 		},
 		[ButtonColor.Green]: {
 			base: 'bg-green-500 text-white',

@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
-import { Gluten } from 'next/font/google';
+import { Montserrat } from 'next/font/google';
 import './globals.css';
 import { FirebaseProvider } from './firebase/FirebaseProvider';
 
-const gluten = Gluten({
-	variable: '--font-gluten',
+// Configure the Montserrat font
+const montserrat = Montserrat({
 	subsets: ['latin'],
-	weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+	display: 'swap', // Recommended for font loading strategy
+	variable: '--font-montserrat',
 });
 
 export const metadata: Metadata = {
@@ -21,7 +22,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang='en'>
-			<body className={`${gluten.variable} antialiased`}>
+			<body className={`${montserrat.className} ${montserrat.variable} antialiased`}>
 				<FirebaseProvider>
 					<div className='flex w-full bg-slate-900 text-white min-h-screen'>{children}</div>
 				</FirebaseProvider>

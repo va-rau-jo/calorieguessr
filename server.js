@@ -2,30 +2,7 @@ import express, { json } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
-import { initializeApp } from 'firebase/app';
-import {
-	getFirestore,
-	doc,
-	getDoc,
-	setDoc,
-	collection,
-	getDocs,
-	where,
-	query as firestoreQuery,
-} from 'firebase/firestore';
 dotenv.config();
-
-const firebaseConfig = {
-	apiKey: 'AIzaSyDboXwOVHlMhnmWL-T9KxiFelc1mUOqTOs',
-	authDomain: 'calorieguessr-cb8c0.firebaseapp.com',
-	projectId: 'calorieguessr-cb8c0',
-	storageBucket: 'calorieguessr-cb8c0.firebasestorage.app',
-	messagingSenderId: '445502022369',
-	appId: '1:445502022369:web:de96714d352bb4c3398da0',
-	measurementId: 'G-S1W7K59ZT2',
-};
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
 
 const app = express();
 const port = 3001;

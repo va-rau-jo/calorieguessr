@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { db } from '../firebase/config';
 import { collection, getDocs, setDoc, doc, getDoc, Firestore } from 'firebase/firestore';
 import { useFirebase } from '../firebase/FirebaseProvider';
-import { DailyFood, FoodItem, mapFirebaseFoodItem } from '../types';
+import { DailyFood, mapFirebaseFoodItem } from '../types';
 import Button from '../components/Button';
 import { dateToUnderscore } from '../utils';
 import DailyFoodRowItem from '../components/DaillyFoodRowItem';

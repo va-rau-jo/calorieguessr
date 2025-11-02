@@ -2,6 +2,7 @@
 import React from 'react';
 import { DailyFood, FoodItem } from '../types';
 import Button, { ButtonColor } from './Button';
+import { dateToHyphenated } from '../utils';
 
 interface DailyFoodRowItemProps {
 	date?: string;
@@ -12,11 +13,6 @@ interface DailyFoodRowItemProps {
 	handleItemChange?: (date: string, index: number, value: string) => void;
 	handleFetchData?: (date: string, index: number) => void;
 }
-
-const BUTTON_CLASS = 'cursor-pointer ml-auto font-bold py-2 px-4 rounded';
-
-const BLUE_BACKGROUND_CLASS = 'text-white bg-blue-500 disabled:bg-blue-300 hover:bg-blue-700';
-const GREEN_BACKGROUND_CLASS = 'text-black bg-green-500 disabled:bg-green-300 hover:bg-green-700';
 
 export default function DailyFoodRowItem({
 	date,
@@ -51,7 +47,7 @@ export default function DailyFoodRowItem({
 					className='text-white text-2xl font-bold text-center bg-transparent'
 					disabled={isExistingItem}
 				/>
-								<Button onClick={handleSave} color={ButtonColor.Secondary}>
+				<Button onClick={handleSave} color={ButtonColor.Secondary}>
 					Save
 				</Button>
 			</div>
@@ -75,11 +71,7 @@ export default function DailyFoodRowItem({
 								}
 								className='font-medium w-full'
 							/>
-														<Button
-								onClick={() => handleFetchData!(formattedDate, index)}
-							>
-								Fetch
-							</Button>
+							<Button onClick={() => handleFetchData!(formattedDate, index)}>Fetch</Button>
 						</div>
 						{item.calories && <div className='text-gray-600 text-sm'>{item.calories} calories</div>}
 					</div>
