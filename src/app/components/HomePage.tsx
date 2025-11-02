@@ -4,7 +4,6 @@ import { useFirebase } from '../firebase/FirebaseProvider';
 import { deleteAllCookies } from './CookieManager';
 import { useRouter } from 'next/navigation';
 import Button, { ButtonColor, ButtonRound, ButtonSize } from './Button';
-import BackgroundGrid from './BackgroundGrid';
 import MovingBackground from './MovingBackground';
 
 interface HomePageProps {
@@ -20,8 +19,7 @@ export default function HomePage({ loading, startGameCallback }: HomePageProps) 
 
 	return (
 		<div className='flex w-full items-center justify-center p-4 font-inter'>
-			{/* <BackgroundGrid /> */}
-			<MovingBackground maxRows={4} />
+			<MovingBackground />
 
 			{user ? (
 				<div className='flex absolute top-4 right-4'>

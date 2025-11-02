@@ -2,40 +2,23 @@
 
 import React, { FC } from 'react';
 
+const MAX_ROWS_ALLOWED = 4;
 const foodImages = [
-	'/burger.png', // Top-left
-	'/pizza.png', // Top-left
-	'/fruit_bowl.png', // Top-left
-	'/chicken_breast.png', // Top-left
-	'/cake.png', // Top-left
-	'/salad.png', // Top-left
-	'/ramen.png', // Top-left
-	'/milkshake.png', // Top-left
-	'/taco.png', // Top-left
+	'/burger.png',
+	'/pizza.png',
+	'/fruit_bowl.png',
+	'/chicken_breast.png',
+	'/cake.png',
+	'/salad.png',
+	'/ramen.png',
+	'/milkshake.png', 
+	'/taco.png', 
 ];
 
-// Define the shape of a row configuration
-interface RowConfig {
-	id: number;
-}
-
-// Define the component props
-interface MovingBackgroundProps {
-	maxRows?: number;
-}
-
-// --- CONFIGURATION ---
-const MAX_ROWS_ALLOWED = 5;
-
-// The images need to be repeated enough times to cover the viewport
-// and still have a duplicate set ready to start as the first set finishes.
-// 3x repetition is usually safe: [Original Set] [Duplicate 1] [Duplicate 2]
-const REPETITION_FACTOR = 4;
-
-const MovingBackground: FC<MovingBackgroundProps> = ({ maxRows = MAX_ROWS_ALLOWED }) => {
+const MovingBackground: FC = () => {
 	return (
 		<div className='select-none fixed inset-0 overflow-hidden opacity-30 blur-[4px] grayscale'>
-			{Array.from({ length: maxRows }).map((_, index) => {
+			{Array.from({ length: MAX_ROWS_ALLOWED }).map((_, index) => {
 				// Randomize the images to avoid repetition
 				const randomizedImages = [...foodImages].sort(() => Math.random() - 0.5);
 				// Duplicate the images for seamless looping - we need 2 identical sets
