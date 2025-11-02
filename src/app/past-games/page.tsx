@@ -74,7 +74,9 @@ export default function PastGamesPage() {
 						className='w-1/2 flex p-4 bg-white rounded-lg shadow hover:bg-gray-50 transition-colors'
 					>
 						<div className='flex flex-col space-y-2 justify-center'>
-							<p className='text-black text-lg'>{dateToHyphenated(pastGame.date)}</p>
+							<div className='w-40'>
+								<p className='text-black text-lg'>{dateToHyphenated(pastGame.date)}</p>
+							</div>
 							{pastGame.game && (
 								<p className='text-lg text-gray-500'>
 									Total: {pastGame.game.scores.reduce((acc, curr) => acc + curr, 0)}
