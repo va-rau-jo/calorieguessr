@@ -11,8 +11,8 @@ const foodImages = [
 	'/cake.png',
 	'/salad.png',
 	'/ramen.png',
-	'/milkshake.png', 
-	'/taco.png', 
+	'/milkshake.png',
+	'/taco.png',
 ];
 
 const MovingBackground: FC = () => {
@@ -27,12 +27,12 @@ const MovingBackground: FC = () => {
 			testDiv.style.position = 'absolute';
 			testDiv.style.visibility = 'hidden';
 			document.body.appendChild(testDiv);
-			
+
 			const rect = testDiv.getBoundingClientRect();
 			const zoom = 100 / rect.width; // 100px expected / actual rendered width
-			
+
 			document.body.removeChild(testDiv);
-			
+
 			// Base blur value that scales with zoom
 			// At 100% zoom (zoom = 1), blur is 4px
 			// As you zoom out (zoom < 1), blur decreases proportionally to maintain visual consistency
@@ -41,20 +41,20 @@ const MovingBackground: FC = () => {
 		};
 
 		updateBlur();
-		
+
 		// Use a debounced resize handler for better performance
 		let timeoutId: NodeJS.Timeout;
 		const handleResize = () => {
 			clearTimeout(timeoutId);
 			timeoutId = setTimeout(updateBlur, 100);
 		};
-		
+
 		window.addEventListener('resize', handleResize);
 		if (window.visualViewport) {
 			window.visualViewport.addEventListener('resize', handleResize);
 			window.visualViewport.addEventListener('scroll', handleResize);
 		}
-		
+
 		return () => {
 			clearTimeout(timeoutId);
 			window.removeEventListener('resize', handleResize);
@@ -66,18 +66,26 @@ const MovingBackground: FC = () => {
 	}, []);
 
 	return (
-		<div 
+		<div
 			className='select-none fixed inset-0 overflow-hidden opacity-30'
-			style={{filter: `blur(${blurValue}) grayscale(100%)`}}
+			style={{ filter: `blur(${blurValue}) grayscale(100%)` }}
 		>
 			{Array.from({ length: MAX_ROWS_ALLOWED }).map((_, index) => {
 				// Randomize the images to avoid repetition
 				const randomizedImages = [...foodImages].sort(() => Math.random() - 0.5);
 				// Duplicate the images for seamless looping - we need 2 identical sets
-				const duplicatedImages = [...randomizedImages, ...randomizedImages, ...randomizedImages, ...randomizedImages];
-				const imagesPerSet = randomizedImages.length;	
+				const duplicatedImages = [
+					...randomizedImages,
+					...randomizedImages,
+					...randomizedImages,
+					...randomizedImages,
+				];
+				const imagesPerSet = randomizedImages.length;
 				const rowDiv = (
-					<div className={`flex flex-row flex-nowrap animate-scroll-left`} style={{ width: '200%' }}>
+					<div
+						className={`flex flex-row flex-nowrap animate-scroll-left`}
+						style={{ width: '200%' }}
+					>
 						{duplicatedImages.map((url, imgIndex) => (
 							<div
 								key={`${index}-${imgIndex}`}

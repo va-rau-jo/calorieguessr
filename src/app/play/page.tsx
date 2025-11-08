@@ -7,7 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { FoodItem } from '../types';
 import { getScoresFromCookie, setGameCookie } from '../components/CookieManager';
-import { getTodaysDateString } from '../utils';
+import { getTodaysDateString } from '../../utils';
 import { FinalScorePage } from '../components/FinalScorePage';
 import Button, { ButtonColor, ButtonRound, ButtonSize } from '../components/Button';
 import { useRouter, useSearchParams } from 'next/navigation';

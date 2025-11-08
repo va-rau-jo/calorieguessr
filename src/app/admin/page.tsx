@@ -6,7 +6,7 @@ import { collection, getDocs, setDoc, doc, getDoc, Firestore } from 'firebase/fi
 import { useFirebase } from '../firebase/FirebaseProvider';
 import { DailyFood, mapFirebaseFoodItem } from '../types';
 import Button from '../components/Button';
-import { dateToUnderscore } from '../utils';
+import { dateToUnderscore, parseCaloriesFromJson } from '../../utils';
 import DailyFoodRowItem from '../components/DaillyFoodRowItem';
 
 export default function AdminPage() {
@@ -67,22 +67,6 @@ export default function AdminPage() {
 			foods.items = items;
 		}
 		setDailyFoods(newDailyFoods);
-	};
-
-	const parseCaloriesFromJson = (jsonData: { food_description: string }): number => {
-		const desc = jsonData['food_description'] as string;
-		const match = desc.match(/Calories:\s*(\d+)/);
-		let calories = match ? parseInt(match[1], 10) : 0;
-
-		const serving = desc.split('Calories')[0];
-		if (serving) {
-			const fraction = serving.split('Per')[1].trim();
-			const multiplier = parseInt(fraction.split('/')[1], 10);
-			if (!isNaN(multiplier)) {
-				calories *= multiplier;
-			}
-		}
-		return calories;
 	};
 
 	const queryFoodsByName = async (db: Firestore, foodName: string) => {

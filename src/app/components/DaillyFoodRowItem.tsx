@@ -2,7 +2,7 @@
 import React from 'react';
 import { DailyFood, FoodItem } from '../types';
 import Button, { ButtonColor } from './Button';
-import { dateToHyphenated } from '../utils';
+import { dateToHyphenated } from '../../utils';
 
 interface DailyFoodRowItemProps {
 	date?: string;

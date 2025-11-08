@@ -6,7 +6,7 @@ import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useRouter } from 'next/navigation';
 import { FoodItem, Game, mapFirebaseFoodItem } from '../types';
-import { dateToHyphenated } from '../utils';
+import { dateToHyphenated } from '../../utils';
 import { getGameFromCookie } from '../components/CookieManager';
 import Button, { ButtonColor, ButtonRound } from '../components/Button';
 import ScoreBubble from '../components/ScoreBubble';
