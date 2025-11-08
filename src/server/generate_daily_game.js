@@ -12,8 +12,7 @@ import { initFatSecretApi, getFoodDataFromFatSecret, getImageFromGoogle } from '
 import { generateContent } from './gemini_server.js';
 import { getTodaysDateString, parseCaloriesFromJson } from '../utils.js';
 import admin from 'firebase-admin';
-
-const FOODS_PER_GAME = 5;
+import * as fs from 'fs';
 
 // Firebase configuration (copied from src/app/firebase/config.ts)
 const firebaseConfig = {
@@ -25,6 +24,9 @@ const firebaseConfig = {
 	appId: '1:445502022369:web:de96714d352bb4c3398da0',
 	measurementId: 'G-S1W7K59ZT2',
 };
+
+// Number of food items to generate per game
+const FOODS_PER_GAME = 5;
 
 /**
  * Placeholder function to generate food names using an LLM
@@ -46,13 +48,13 @@ async function generateFoodNames(count, foodNames) {
 	Return only the food names, one per line, without any additional text or formatting.`;
 
 	prompt = prompt.replace(foodListPlaceholder, foodNames.join(', '));
-	// const modelOutput = await generateContent(prompt);
-	const modelOutput = `McDonald's Quarter Pounder with Cheese
-Burger King Whopper
-Taco Bell Crunchwrap Supreme
-Chick-fil-A Chicken Sandwich
-Starbucks Bacon, Gouda & Egg Breakfast Sandwich
-`;
+	const modelOutput = await generateContent(prompt);
+	// 	const modelOutput = `McDonald's Quarter Pounder with Cheese
+	// Burger King Whopper
+	// Taco Bell Crunchwrap Supreme
+	// Chick-fil-A Chicken Sandwich
+	// Starbucks Bacon, Gouda & Egg Breakfast Sandwich
+	// `;
 	let foods = modelOutput.trim().split('\n');
 	if (foods.length != 5) {
 		throw Error('Expected 5 food items, got ' + foods.length);
@@ -94,11 +96,12 @@ async function processFoodItem(foodName) {
 /**
  * Upload daily game data to Firebase.
  *
- * @param {FirebaseFirestore} db - The Firestore database instance.
+ * @param {admin.FirebaseFirestore} db - The Firestore database instance.
  * @param {object[]} foods - Array of food items to upload.
  * @param {string} date - The date for the daily game in 'YYYY-MM-DD' format.
  */
 async function uploadToFirebase(db, foods, date) {
+	console.log('Uploading to Firebase for date:', date);
 	try {
 		// Filter out null items (failed to fetch)
 		const validFoods = foods.filter((food) => food !== null && food.calories !== null);
@@ -108,31 +111,36 @@ async function uploadToFirebase(db, foods, date) {
 			return;
 		}
 
-		// Save individual food items to foodItems collection
-		for (const item of validFoods) {
-			if (item.name && item.calories) {
+		const foodItemsBatch = db.batch();
+		const firebaseFoodObjects = validFoods.map((item) => ({
+			name: item.name,
+			calories: item.calories,
+			imageUrl: item.imageUrl || '',
+		}));
+
+		// Add each food item to the batch
+		await Promise.all(
+			firebaseFoodObjects.map(async (item) => {
 				const itemName = item.name.toLowerCase();
-				const foodDocRef = doc(db, 'foodItems', itemName);
-				await setDoc(foodDocRef, {
-					name: item.name,
-					calories: item.calories,
-					imageUrl: item.imageUrl || '',
-				});
-				console.log(`Saved food item: ${item.name}`);
-			}
-		}
+				const foodDocRef = db.collection('foodItems').doc(itemName);
 
-		// Save daily foods data
-		const firebaseData = {
-			foods: validFoods.map((item) => ({
-				name: item.name,
-				calories: item.calories,
-				imageUrl: item.imageUrl || '',
-			})),
-		};
+				// Check if item exists already
+				const docSnapshot = await foodDocRef.get();
+				if (!docSnapshot.exists) {
+					foodItemsBatch.set(foodDocRef, item);
+				} else {
+					console.log(`Food item ${itemName} already exists in Firebase, skipping...`);
+				}
+			})
+		);
 
-		const docRef = doc(db, 'dailyFoods', date);
-		await setDoc(docRef, firebaseData);
+		console.log('Updating daily food data');
+		// Daily food data will use the same firebase food objects
+		const dailyFoodData = { foods: firebaseFoodObjects };
+		const docRef = db.collection('dailyFoods').doc(date);
+
+		// Commit changes
+		await Promise.all([foodItemsBatch.commit(), docRef.set(dailyFoodData)]);
 		console.log(`\nSuccessfully uploaded daily game for ${date} with ${validFoods.length} foods`);
 	} catch (error) {
 		console.error('Error uploading to Firebase:', error);
@@ -140,7 +148,14 @@ async function uploadToFirebase(db, foods, date) {
 	}
 }
 
+/**
+ * Fetch all food items from Firebase.
+ *
+ * @param {FirebaseFirestore} db - The Firestore database instance.
+ * @returns {Promise<string[]>} - Array of food item names.
+ */
 async function fetchFirebaseFoods(db) {
+	console.log('Fetching foods from Firebase...');
 	const foodItemsSnapshot = await getDocs(collection(db, 'foodItems'));
 	const firebaseFoods = [];
 	foodItemsSnapshot.forEach((docSnap) => {
@@ -151,69 +166,101 @@ async function fetchFirebaseFoods(db) {
 }
 
 /**
+ * Initialize Firebase Admin SDK.
+ *
+ * @returns {FirebaseFirestore} - Firestore database instance.
+ */
+async function initFirebaseApi() {
+	console.log('Starting Firebase Admin SDK initialization...');
+	// Service account path for Firebase Admin SDK
+	const serviceAccountPath = './src/server/serviceAccountKey.json';
+	try {
+		if (!fs.existsSync(serviceAccountPath)) {
+			throw new Error(
+				`Service account file not found at: ${serviceAccountPath}. Please download it from the Firebase Console.`
+			);
+		}
+		const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+
+		admin.initializeApp({
+			credential: admin.credential.cert(serviceAccount),
+		});
+
+		console.log('Firebase Admin SDK initialized successfully.');
+		return admin.firestore();
+	} catch (error) {
+		console.error('Failed to initialize Firebase Admin SDK:', error.message);
+		process.exit(1);
+	}
+}
+
+/**
  * Main function to generate daily game
+ *
+ * Steps:
+ * 1. Initialize Firebase API
+ * 2. Initialize FatSecret API and Firebase Admin SDK in parallel
+ * 3. Fetch foods from firebase
+ * 4. Generate food names using LLM
+ * 5. Process each food item (get calories and images) in parallel
+ * 6. Upload daily game data to Firebase
  */
 async function generateDailyGame() {
 	console.log('Starting daily game generation...\n');
 
 	// Step 0: Initialize Firebase API
 	const app = initializeApp(firebaseConfig);
-	const db = getFirestore(app);
+	const readOnlyDb = getFirestore(app);
 
-	// Step 1: Initialize FatSecret API
-	await initFatSecretApi();
-	console.log('FatSecret access token obtained');
+	// Step 1: Initialize FatSecret API and Firebase Admin SDK in parallel
+	const [, adminDb] = await Promise.all([initFatSecretApi(), initFirebaseApi()]);
 
-	// Step 1.5: Fetch foods from firebase
-	// Fetch foods from the 'foodItems' collection in Firebase
-	const firebaseFoods = await fetchFirebaseFoods(db);
+	// Step 2: Fetch foods from firebase
+	const firebaseFoods = await fetchFirebaseFoods(readOnlyDb);
 	console.log(`Fetched ${firebaseFoods.length} foods from Firebase`);
 
-	// Step 2: Generate food names
+	// Step 3: Generate food names using LLM
 	const foodNames = await generateFoodNames(FOODS_PER_GAME, firebaseFoods);
 	console.log(`Generated ${foodNames.length} food names: ${foodNames.join(', ')}\n`);
 
-	// Step 3: Process each food item (get calories and images) in parallel
-	// const processedFoods = await Promise.all(
-	// 	foodNames.map(foodName => processFoodItem(foodName))
-	// );
-	const processedFoods = [
-		{
-			name: "McDonald's Quarter Pounder with Cheese",
-			calories: 670,
-			imageUrl:
-				'https://upload.wikimedia.org/wikipedia/commons/c/ce/McDonald%27s_Quarter_Pounder_with_Cheese%2C_United_States.jpg',
-		},
-		{
-			name: 'Burger King Whopper',
-			calories: 670,
-			imageUrl:
-				'https://cdn.prod.website-files.com/631b4b4e277091ef01450237/65947cd2a2c28c35b5ca6fb1_Whopper%20w%20Cheese.png',
-		},
-		{
-			name: 'Taco Bell Crunchwrap Supreme',
-			calories: 670,
-			imageUrl: 'https://www.tacobell.com/images/22362_crunchwrap_supreme_640x650.jpg',
-		},
-		{
-			name: 'Chick-fil-A Chicken Sandwich',
-			calories: 670,
-			imageUrl: 'https://www.cfacdn.com/img/order/menu/Online/Entrees/Jul19_CFASandwich_pdp.png',
-		},
-		{
-			name: 'Starbucks Bacon, Gouda & Egg Breakfast Sandwich',
-			calories: 670,
-			imageUrl:
-				'https://www.stetted.com/wp-content/uploads/2014/04/Starbucks-Breakfast-Sandwich-Image.jpg',
-		},
-	];
+	// Step 4: Process each food item (get calories and images) in parallel
+	const processedFoods = await Promise.all(foodNames.map((foodName) => processFoodItem(foodName)));
+	// const processedFoods = [
+	// 	{
+	// 		name: "McDonald's Quarter Pounder with Cheese",
+	// 		calories: 670,
+	// 		imageUrl:
+	// 			'https://upload.wikimedia.org/wikipedia/commons/c/ce/McDonald%27s_Quarter_Pounder_with_Cheese%2C_United_States.jpg',
+	// 	},
+	// 	{
+	// 		name: 'Burger King Whopper',
+	// 		calories: 670,
+	// 		imageUrl:
+	// 			'https://cdn.prod.website-files.com/631b4b4e277091ef01450237/65947cd2a2c28c35b5ca6fb1_Whopper%20w%20Cheese.png',
+	// 	},
+	// 	{
+	// 		name: 'Taco Bell Crunchwrap Supreme',
+	// 		calories: 670,
+	// 		imageUrl: 'https://www.tacobell.com/images/22362_crunchwrap_supreme_640x650.jpg',
+	// 	},
+	// 	{
+	// 		name: 'Chick-fil-A Chicken Sandwich',
+	// 		calories: 670,
+	// 		imageUrl: 'https://www.cfacdn.com/img/order/menu/Online/Entrees/Jul19_CFASandwich_pdp.png',
+	// 	},
+	// 	{
+	// 		name: 'Starbucks Bacon, Gouda & Egg Breakfast Sandwich',
+	// 		calories: 670,
+	// 		imageUrl:
+	// 			'https://www.stetted.com/wp-content/uploads/2014/04/Starbucks-Breakfast-Sandwich-Image.jpg',
+	// 	},
+	// ];
 	console.log(processedFoods);
 
-	// Step 4: Upload to Firebase
+	// Step 5: Upload generated food names, fetched images, and calories to Firebase
 	const date = getTodaysDateString();
-	await uploadToFirebase(db, processedFoods, date);
+	await uploadToFirebase(adminDb, processedFoods, date);
 
-	console.log('\nDaily game generation completed successfully!');
 	process.exit(0);
 }
 

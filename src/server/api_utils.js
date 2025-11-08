@@ -13,7 +13,7 @@ let FATSECRET_ACCESS_TOKEN = null;
 
 /**
  * Initialize FatSecret API and get access token
- * @returns
+ * @returns {Promise<object>} - Object containing access token and expires_in
  */
 async function initFatSecretApi() {
 	const requestBody = 'grant_type=client_credentials&scope=basic';
@@ -52,29 +52,20 @@ async function initFatSecretApi() {
  * @returns {Promise<object|null>} - Raw food data object, or null if not found
  */
 async function getFoodDataFromFatSecret(foodName) {
-	// Ensure we have an access token
 	if (!FATSECRET_ACCESS_TOKEN) {
 		await initFatSecretApi();
 	}
 
-	return JSON.parse(`{
-		"brand_name": "Burger King",
-		"food_description": "Per 1 serving - Calories: 670kcal | Fat: 41.00g | Carbs: 54.00g | Protein: 31.50g",
-		"food_id": "68444864",
-		"food_name": "Whopper",
-		"food_type": "Brand",
-		"food_url": "https://foods.fatsecret.com/calories-nutrition/burger-king/whopper"
-	}`);
-	// return {
-	// 	food: {
-	// 		brand_name: 'Burger King',
-	// 		food_description: 'Per 1 serving - Calories: 670kcal | Fat: 41.00g | Carbs: 54.00g | Protein: 31.50g',
-	// 		food_id: '68444864',
-	// 		food_name: 'Whopper',
-	// 		food_type: 'Brand',
-	// 		food_url: 'https://foods.fatsecret.com/calories-nutrition/burger-king/whopper'
-	// 	  },
-	// };
+	// For testing
+
+	// return JSON.parse(`{
+	// 	"brand_name": "Burger King",
+	// 	"food_description": "Per 1 serving - Calories: 670kcal | Fat: 41.00g | Carbs: 54.00g | Protein: 31.50g",
+	// 	"food_id": "68444864",
+	// 	"food_name": "Whopper",
+	// 	"food_type": "Brand",
+	// 	"food_url": "https://foods.fatsecret.com/calories-nutrition/burger-king/whopper"
+	// }`);
 
 	try {
 		const body = new URLSearchParams({
