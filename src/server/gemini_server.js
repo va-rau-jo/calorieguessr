@@ -8,7 +8,7 @@ const ai = new GoogleGenAI({});
  * @param {string} prompt - The text prompt to send to the model.
  */
 async function generateContent(prompt) {
-	console.log(`Sending prompt to Gemini: "${prompt}"`);
+	console.log(`Sending prompt to Gemini:\n"${prompt}"`);
 
 	try {
 		// 1. Call the model

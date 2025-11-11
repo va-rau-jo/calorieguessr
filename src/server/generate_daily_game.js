@@ -28,6 +28,39 @@ const firebaseConfig = {
 // Number of food items to generate per game
 const FOODS_PER_GAME = 5;
 
+// Dummy processed foods for testing
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const DUMMY_PROCESSED_FOODS_FOR_UPLOAD = [
+	{
+		name: "McDonald's Quarter Pounder with Cheese",
+		calories: 670,
+		imageUrl:
+			'https://upload.wikimedia.org/wikipedia/commons/c/ce/McDonald%27s_Quarter_Pounder_with_Cheese%2C_United_States.jpg',
+	},
+	{
+		name: 'Burger King Whopper',
+		calories: 670,
+		imageUrl:
+			'https://cdn.prod.website-files.com/631b4b4e277091ef01450237/65947cd2a2c28c35b5ca6fb1_Whopper%20w%20Cheese.png',
+	},
+	{
+		name: 'Taco Bell Crunchwrap Supreme',
+		calories: 670,
+		imageUrl: 'https://www.tacobell.com/images/22362_crunchwrap_supreme_640x650.jpg',
+	},
+	{
+		name: 'Chick-fil-A Chicken Sandwich',
+		calories: 670,
+		imageUrl: 'https://www.cfacdn.com/img/order/menu/Online/Entrees/Jul19_CFASandwich_pdp.png',
+	},
+	{
+		name: 'Starbucks Bacon, Gouda & Egg Breakfast Sandwich',
+		calories: 670,
+		imageUrl:
+			'https://www.stetted.com/wp-content/uploads/2014/04/Starbucks-Breakfast-Sandwich-Image.jpg',
+	},
+];
+
 /**
  * Placeholder function to generate food names using an LLM
  * @param {number} count - Number of food names to generate
@@ -35,8 +68,7 @@ const FOODS_PER_GAME = 5;
  * @returns {Promise<string[]>} - Array of generated food names
  */
 async function generateFoodNames(count, foodNames) {
-	console.log(`Generating ${count} food names...`);
-	console.log(`Trying to skip ${foodNames.length} previously used foods.`);
+	console.log(`Generating ${count} food names, skipping ${foodNames.length} previous foods.`);
 
 	const foodListPlaceholder = '{food_list}';
 
@@ -68,14 +100,11 @@ async function generateFoodNames(count, foodNames) {
  * @returns {Promise<object|null>} - Object containing food name, calories, and image URL, or null if failed
  */
 async function processFoodItem(foodName) {
-	console.log(`\nProcessing food item: ${foodName}`);
-
 	const foodData = await getFoodDataFromFatSecret(foodName);
 	if (foodData === null) {
 		console.log(`Failed to get calories for ${foodName}, skipping...`);
 		return null;
 	}
-	console.log(foodData);
 	const calories = parseCaloriesFromJson(foodData);
 
 	// Get image from Google
@@ -97,7 +126,8 @@ async function processFoodItem(foodName) {
  * Upload daily game data to Firebase.
  *
  * @param {admin.FirebaseFirestore} db - The Firestore database instance.
- * @param {object[]} foods - Array of food items to upload.
+ * @param {object[]} foods - Array of food items to upload, containing name,
+ *  calories, and imageUrl.
  * @param {string} date - The date for the daily game in 'YYYY-MM-DD' format.
  */
 async function uploadToFirebase(db, foods, date) {
@@ -112,15 +142,9 @@ async function uploadToFirebase(db, foods, date) {
 		}
 
 		const foodItemsBatch = db.batch();
-		const firebaseFoodObjects = validFoods.map((item) => ({
-			name: item.name,
-			calories: item.calories,
-			imageUrl: item.imageUrl || '',
-		}));
-
 		// Add each food item to the batch
 		await Promise.all(
-			firebaseFoodObjects.map(async (item) => {
+			validFoods.map(async (item) => {
 				const itemName = item.name.toLowerCase();
 				const foodDocRef = db.collection('foodItems').doc(itemName);
 
@@ -134,9 +158,8 @@ async function uploadToFirebase(db, foods, date) {
 			})
 		);
 
-		console.log('Updating daily food data');
 		// Daily food data will use the same firebase food objects
-		const dailyFoodData = { foods: firebaseFoodObjects };
+		const dailyFoodData = { foods: validFoods };
 		const docRef = db.collection('dailyFoods').doc(date);
 
 		// Commit changes
@@ -155,7 +178,6 @@ async function uploadToFirebase(db, foods, date) {
  * @returns {Promise<string[]>} - Array of food item names.
  */
 async function fetchFirebaseFoods(db) {
-	console.log('Fetching foods from Firebase...');
 	const foodItemsSnapshot = await getDocs(collection(db, 'foodItems'));
 	const firebaseFoods = [];
 	foodItemsSnapshot.forEach((docSnap) => {
@@ -171,7 +193,6 @@ async function fetchFirebaseFoods(db) {
  * @returns {FirebaseFirestore} - Firestore database instance.
  */
 async function initFirebaseApi() {
-	console.log('Starting Firebase Admin SDK initialization...');
 	// Service account path for Firebase Admin SDK
 	const serviceAccountPath = './src/server/serviceAccountKey.json';
 	try {
@@ -221,40 +242,10 @@ async function generateDailyGame() {
 
 	// Step 3: Generate food names using LLM
 	const foodNames = await generateFoodNames(FOODS_PER_GAME, firebaseFoods);
-	console.log(`Generated ${foodNames.length} food names: ${foodNames.join(', ')}\n`);
+	console.log(`Generated ${foodNames.length} food names: ${foodNames.join('\n')}\n`);
 
 	// Step 4: Process each food item (get calories and images) in parallel
 	const processedFoods = await Promise.all(foodNames.map((foodName) => processFoodItem(foodName)));
-	// const processedFoods = [
-	// 	{
-	// 		name: "McDonald's Quarter Pounder with Cheese",
-	// 		calories: 670,
-	// 		imageUrl:
-	// 			'https://upload.wikimedia.org/wikipedia/commons/c/ce/McDonald%27s_Quarter_Pounder_with_Cheese%2C_United_States.jpg',
-	// 	},
-	// 	{
-	// 		name: 'Burger King Whopper',
-	// 		calories: 670,
-	// 		imageUrl:
-	// 			'https://cdn.prod.website-files.com/631b4b4e277091ef01450237/65947cd2a2c28c35b5ca6fb1_Whopper%20w%20Cheese.png',
-	// 	},
-	// 	{
-	// 		name: 'Taco Bell Crunchwrap Supreme',
-	// 		calories: 670,
-	// 		imageUrl: 'https://www.tacobell.com/images/22362_crunchwrap_supreme_640x650.jpg',
-	// 	},
-	// 	{
-	// 		name: 'Chick-fil-A Chicken Sandwich',
-	// 		calories: 670,
-	// 		imageUrl: 'https://www.cfacdn.com/img/order/menu/Online/Entrees/Jul19_CFASandwich_pdp.png',
-	// 	},
-	// 	{
-	// 		name: 'Starbucks Bacon, Gouda & Egg Breakfast Sandwich',
-	// 		calories: 670,
-	// 		imageUrl:
-	// 			'https://www.stetted.com/wp-content/uploads/2014/04/Starbucks-Breakfast-Sandwich-Image.jpg',
-	// 	},
-	// ];
 	console.log(processedFoods);
 
 	// Step 5: Upload generated food names, fetched images, and calories to Firebase

@@ -19,7 +19,7 @@ initFatSecretApi().then(() => {
 	console.log('FatSecret API initialized');
 });
 
-app.get('/api/init', async (req, res) => {
+app.get('/api/init', async (_, res) => {
 	try {
 		const jsonResult = await initFatSecretApi();
 		res.status(200).json(jsonResult);
@@ -47,7 +47,6 @@ app.get('/api/food/image', async (req, res) => {
 	try {
 		console.log('Fetching image for ', foodName);
 		const imageUrl = await getImageFromGoogle(foodName);
-		console.log('Image URL: ', imageUrl);
 		res.json({ imageUrl });
 	} catch (error) {
 		res.status(500).json({ error: error.message });

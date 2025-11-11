@@ -9,6 +9,17 @@ const GOOGLE_SEARCH_API_KEY = process.env.GOOGLE_SEARCH_API_KEY;
 const GOOGLE_SEARCH_ENGINE_ID = process.env.GOOGLE_SEARCH_ENGINE_ID;
 const GOOGLE_SEARCH_API_URL = 'https://www.googleapis.com/customsearch/v1';
 
+// Dummy response for testing
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const DUMMY_FAT_SECRET_RESPONSE = JSON.parse(`{
+		"brand_name": "Burger King",
+		"food_description": "Per 1 serving - Calories: 670kcal | Fat: 41.00g | Carbs: 54.00g | Protein: 31.50g",
+		"food_id": "68444864",
+		"food_name": "Whopper",
+		"food_type": "Brand",
+		"food_url": "https://foods.fatsecret.com/calories-nutrition/burger-king/whopper"
+	}`);
+
 let FATSECRET_ACCESS_TOKEN = null;
 
 /**
@@ -56,16 +67,8 @@ async function getFoodDataFromFatSecret(foodName) {
 		await initFatSecretApi();
 	}
 
-	// For testing
-
-	// return JSON.parse(`{
-	// 	"brand_name": "Burger King",
-	// 	"food_description": "Per 1 serving - Calories: 670kcal | Fat: 41.00g | Carbs: 54.00g | Protein: 31.50g",
-	// 	"food_id": "68444864",
-	// 	"food_name": "Whopper",
-	// 	"food_type": "Brand",
-	// 	"food_url": "https://foods.fatsecret.com/calories-nutrition/burger-king/whopper"
-	// }`);
+	// For testing, uncomment:
+	// return DUMMY_FAT_SECRET_RESPONSE;
 
 	try {
 		const body = new URLSearchParams({
@@ -89,7 +92,6 @@ async function getFoodDataFromFatSecret(foodName) {
 		}
 
 		const data = await response.json();
-		console.log(data);
 		return data.foods?.food || null;
 	} catch (error) {
 		console.error(`Error fetching food data for ${foodName}:`, error);
