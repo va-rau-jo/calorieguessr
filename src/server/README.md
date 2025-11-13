@@ -1,3 +1,13 @@
+### Running generate_daily_game.js
+
+Run the following command:
+
+```
+node src/server/generate_daily_game.js
+```
+
+This will generate a new daily game and update the Firebase database.
+
 ### Required for offline server functionality:
 
 #### serviceAccountKey.json

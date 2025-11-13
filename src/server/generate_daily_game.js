@@ -7,10 +7,10 @@
  */
 
 import { initializeApp } from 'firebase/app';
-import { collection, getFirestore, doc, getDocs, setDoc } from 'firebase/firestore';
+import { collection, getFirestore, getDocs } from 'firebase/firestore';
 import { initFatSecretApi, getFoodDataFromFatSecret, getImageFromGoogle } from './api_utils.js';
 import { generateContent } from './gemini_server.js';
-import { getTodaysDateString, parseCaloriesFromJson } from '../utils.js';
+import { getTodaysDateAsUnderscoreString, parseCaloriesFromJson } from '../utils.js';
 import admin from 'firebase-admin';
 import * as fs from 'fs';
 
@@ -249,7 +249,7 @@ async function generateDailyGame() {
 	console.log(processedFoods);
 
 	// Step 5: Upload generated food names, fetched images, and calories to Firebase
-	const date = getTodaysDateString();
+	const date = getTodaysDateAsUnderscoreString();
 	await uploadToFirebase(adminDb, processedFoods, date);
 
 	process.exit(0);

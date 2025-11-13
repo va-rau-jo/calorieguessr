@@ -7,7 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { FoodItem } from '../types';
 import { getScoresFromCookie, setGameCookie } from '../components/CookieManager';
-import { getTodaysDateString } from '../../utils';
+import { getTodaysDateAsUnderscoreString } from '../../utils';
 import { FinalScorePage } from '../components/FinalScorePage';
 import Button, { ButtonColor, ButtonRound, ButtonSize } from '../components/Button';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -70,8 +70,10 @@ export default function Home() {
 
 			try {
 				// Set the current game's date to either today or the provided past game
-				const dateString = searchParams.get('date') || getTodaysDateString();
+				const dateString = searchParams.get('date') || getTodaysDateAsUnderscoreString();
 				setGameDateString(dateString);
+
+				console.log(dateString);
 
 				// Fetch the questions for the current game date from Firebase
 				const docRef = doc(db, 'dailyFoods', dateString);

@@ -2,17 +2,23 @@ export function dateToHyphenated(dateString) {
 	return dateString.replace(/_/g, '-');
 }
 
-export function dateToUnderscore(dateString) {
-	return dateString.replace(/-/g, '_');
+export function stringToUnderscore(string) {
+	return string.replace(/-/g, '_');
 }
 
-export function getTodaysDateString() {
+/**
+ * Get today's date string in the format 'YYYY_MM_DD'
+ * E.g. '2023_12_25'
+ * @returns Today's date string
+ */
+export function getTodaysDateAsUnderscoreString() {
 	const today = new Date(
 		new Date().toLocaleString('en-US', {
-			timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+			timeZone: 'America/Los_Angeles',
 		})
 	);
-	return dateToUnderscore(today.toISOString().split('T')[0]);
+	const output = `${today.getFullYear()}_${today.getMonth() + 1}_${today.getDate()}`;
+	return output;
 }
 
 /**

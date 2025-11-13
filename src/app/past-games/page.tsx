@@ -70,7 +70,6 @@ export default function PastGamesPage() {
 				{pastGames.map((pastGame) => (
 					<div
 						key={pastGame.date}
-						onClick={!pastGame.game ? () => handleDateClick(pastGame.date) : undefined}
 						className='w-1/2 flex p-4 bg-white rounded-lg shadow hover:bg-gray-50 transition-colors'
 					>
 						<div className='flex flex-col space-y-2 justify-center'>
