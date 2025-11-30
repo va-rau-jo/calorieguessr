@@ -25,3 +25,7 @@ To obtain the `serviceAccountKey.json` file:
 #### FatSecret API
 
 You need to whitelist the server's IP address in the FatSecret API settings.
+
+#### N8n Setup
+
+npm install n8n

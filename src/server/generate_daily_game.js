@@ -13,6 +13,8 @@ import { generateContent } from './gemini_server.js';
 import { getTodaysDateAsUnderscoreString, parseCaloriesFromJson } from '../utils.js';
 import admin from 'firebase-admin';
 import * as fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Firebase configuration (copied from src/app/firebase/config.ts)
 const firebaseConfig = {
@@ -194,7 +196,9 @@ async function fetchFirebaseFoods(db) {
  */
 async function initFirebaseApi() {
 	// Service account path for Firebase Admin SDK
-	const serviceAccountPath = './src/server/serviceAccountKey.json';
+	const __filename = fileURLToPath(import.meta.url);
+	const __dirname = path.dirname(__filename);
+	const serviceAccountPath = path.join(__dirname, '../server/serviceAccountKey.json');
 	try {
 		if (!fs.existsSync(serviceAccountPath)) {
 			throw new Error(
