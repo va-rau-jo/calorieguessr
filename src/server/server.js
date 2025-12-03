@@ -1,7 +1,8 @@
 import express, { json } from 'express';
 import cors from 'cors';
 import { initFatSecretApi, getFoodDataFromFatSecret, getImageFromGoogle } from './api_utils.js';
-
+import schedule from 'node-schedule';
+import { generateDailyGame } from './generate_daily_game_lib.js';
 const app = express();
 const port = 3001;
 
@@ -55,4 +56,11 @@ app.get('/api/food/image', async (req, res) => {
 
 app.listen(port, () => {
 	console.log(`Server listening at http://localhost:${port}`);
+
+	// Runs at the start of every day.
+	schedule.scheduleJob('0 0 0 * * *', function () {
+		// second, minute, hour, day, week, year
+		// Schedule with '* * * * * *' to run every second
+		generateDailyGame();
+	});
 });
